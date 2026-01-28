@@ -6,7 +6,7 @@
 /*   By: zaboulaza <zaboulaza@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/22 13:39:04 by zaboulaza         #+#    #+#             */
-/*   Updated: 2026/01/27 20:25:54 by zaboulaza        ###   ########.fr       */
+/*   Updated: 2026/01/29 00:43:39 by zaboulaza        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,9 +21,13 @@ int main(int ac, char **av){
     
     Server serv;
 
+    // std::vector<Server>
+
     serv.set_port(av[1]);
     if (!serv.serv_init())
         return (1);
-    
+
     return 0;
 }
+
+// nginx + nom de regle ex : auto_index

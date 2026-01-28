@@ -6,7 +6,7 @@
 /*   By: zaboulaza <zaboulaza@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/27 20:28:17 by zaboulaza         #+#    #+#             */
-/*   Updated: 2026/01/28 17:06:41 by zaboulaza        ###   ########.fr       */
+/*   Updated: 2026/01/29 00:29:19 by zaboulaza        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,7 +64,7 @@ int Server::creat_and_bind_socket(){
         }
         break;
     }
-    
+
     if(tmp == NULL){
         std::cerr << "server: failed to bind" << std::endl;
         freeaddrinfo(servinfo);
@@ -147,7 +147,7 @@ int Server::serv_init(){
         return (1);
     
     while(1){ // boucle pour accepter les prochaine conextion je crois / action
-        
+    
         this->_nb_event = epoll_wait(this->_epoll_g, events, _nb_socket, -1);
         if(this->_nb_event == -1){
             std::cerr << "epoll_wait failed: " << strerror(errno) << std::endl;
@@ -155,10 +155,12 @@ int Server::serv_init(){
             break;
         }
         for (int n = 0; n < this->_nb_event; n++){ // verif tout les event qu'il ya eu
+            // while (serve[i]){
             if(events[n].data.fd == this->_sockfd){
                 if(!accept_new_client())
                     break;
             }
+            // }
             else{
                 if(!handle_client_event(n))
                     break;

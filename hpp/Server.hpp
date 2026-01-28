@@ -6,7 +6,7 @@
 /*   By: zaboulaza <zaboulaza@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/26 15:15:51 by zaboulaza         #+#    #+#             */
-/*   Updated: 2026/01/28 17:04:00 by zaboulaza        ###   ########.fr       */
+/*   Updated: 2026/01/29 00:29:05 by zaboulaza        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,11 +59,18 @@ class Server{
         char *_port;            // av[1]
         int _status;            // utile pour print err -> gai_strerror(status)
         int _sockfd;            // socket server 
-        int _epoll_g;           // epoll qui surveille tout le monde
-        int _nb_socket;         // nombre de socket surveiller par epoll
-        int _nb_event;          // nombre de socket qui on declancher une action
         socklen_t _addr_size;   // taille de la structure ou il ya l'adress du client 
         int _new_fd;            // le nouveau fd client
         std::map<int, Client> _clients; // stock les client dans un std::map pour chaque socket il y a son client
         
-};
+        // int _listen;
+        // location **loc;
+        int _epoll_g;           // epoll qui surveille tout le monde
+        int _nb_socket;         // nombre de socket surveiller par epoll
+        int _nb_event;          // nombre de socket qui on declancher une action
+    };
+    
+// classe epoll 
+// fichier de config a faire / plusieur server
+// std::vector<Server> 
+// gere plusieur ports diferent 
