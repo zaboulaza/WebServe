@@ -5,10 +5,11 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: zaboulaza <zaboulaza@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/01/26 15:16:38 by zaboulaza         #+#    #+#             */
-/*   Updated: 2026/01/27 19:45:39 by zaboulaza        ###   ########.fr       */
+/*   Created: 2026/01/27 20:27:49 by zaboulaza         #+#    #+#             */
+/*   Updated: 2026/01/27 20:27:50 by zaboulaza        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
 
 #pragma once
 
@@ -24,7 +25,7 @@ class Client{
             Client(int new_fd);
             
     private:
-    
+        
             int _socket; // la socket du client
 
 };

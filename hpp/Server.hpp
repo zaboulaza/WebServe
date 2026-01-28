@@ -6,7 +6,7 @@
 /*   By: zaboulaza <zaboulaza@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/26 15:15:51 by zaboulaza         #+#    #+#             */
-/*   Updated: 2026/01/27 20:20:56 by zaboulaza        ###   ########.fr       */
+/*   Updated: 2026/01/28 17:04:00 by zaboulaza        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,6 +42,17 @@ class Server{
 
         int serv_init();
         int set_non_blocking(int sockfd);
+        int creat_and_bind_socket();
+        int setup_epoll();
+        int accept_new_client();
+        int handle_client_event(int n);
+
+        struct addrinfo hints;      // les regle a respecter genre
+        struct addrinfo *servinfo;  // stock toute mes info (le port, IP, etc...)
+        struct addrinfo *tmp;       // tmp pour boucler sur servinfo
+        struct epoll_event ev;      // dit a epoll quoi surveiller et quoi renvoyer 
+        struct epoll_event *events; // epoll vas metre dedant les socket qui on declencher un event (epoll_wait)
+        struct sockaddr_storage client_addr; // peux contenir nimporte quelle IP 4 ou 6
 
     private:    
 
