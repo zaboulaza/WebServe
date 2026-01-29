@@ -6,7 +6,7 @@
 /*   By: zaboulaza <zaboulaza@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/29 03:31:00 by zaboulaza         #+#    #+#             */
-/*   Updated: 2026/01/29 05:12:59 by zaboulaza        ###   ########.fr       */
+/*   Updated: 2026/01/29 20:18:15 by zaboulaza        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,7 +26,7 @@ Epoll &Epoll::operator=(const Epoll &epoll){
 int Epoll::set_port(char **av, int ac){
 
     if (this->_serve.size() > 0)
-        return (1);
+        return (0);
 
     for (int i = 1; i < ac; i++){
         Server serv;
@@ -112,25 +112,34 @@ int Epoll::create_and_bind_socket(){
 int Epoll::setup_epoll(){
     
     this->_epoll_g = epoll_create(MAXEPOLLSIZE); // cree le epoll qui vas tout gere
-    ev.events = EPOLLIN | EPOLLET;  // EPOLLIN notif if -> donner a lire / EPOLLET edge-triggered -> une seul notif
-    ev.data.fd = this->_sockfd; // quand cette event ^ arrive donne moi ce fd
-    if (epoll_ctl(this->_epoll_g, EPOLL_CTL_ADD, this->_sockfd, &ev) < 0){
-        std::cerr << "error : epoll fail to insert" << std::endl;
-        return(0);
+    this->_nb_socket = 0;
+    struct epoll_event ev;      // dit a epoll quoi surveiller et quoi renvoyer 
+    for (std::vector<Server>::iterator it = _serve.begin(); it != _serve.end(); ){
+
+        ev.events = EPOLLIN;  // EPOLLIN notif if -> donner a lire / EPOLLET edge-triggered -> une seul notif
+        ev.data.fd = it->get_sockfd(); // quand cette event ^ arrive donne moi ce fd
+        if (epoll_ctl(this->_epoll_g, EPOLL_CTL_ADD, it->get_sockfd(), &ev) < 0){
+            std::cerr << "error : epoll fail to insert" << std::endl;
+            it = _serve.erase(it);
+            continue;
+        }
+        else{
+            std::cout << "success insert socket into epoll" << std::endl;
+            this->_nb_socket++;
+            it++;
+        }
     }
-    else
-        std::cout << "success insert socket into epoll" << std::endl;
-    
-    events = new epoll_event[MAXEPOLLSIZE](); // alloue la place et vide
-    this->_nb_socket = 1;
     return (1);
 }
 
-int Epoll::accept_new_client(){
+int Epoll::accept_new_client(Server &serve){
     
-    this->_addr_size = sizeof(client_addr);
-    _new_fd = accept(this->_sockfd, (struct sockaddr *)&client_addr, &_addr_size); // cree une socket client _new_fd
-    if (_new_fd == -1){
+    struct sockaddr_storage client_addr; // peux contenir nimporte quelle IP 4 ou 6
+    socklen_t addr_size = sizeof(client_addr);
+    struct epoll_event ev;      // dit a epoll quoi surveiller et quoi renvoyer 
+    
+    serve.set_new_fd(accept(serve.get_sockfd(), (struct sockaddr *)&client_addr, &addr_size)); // cree une socket client _new_fd
+    if (serve.get_new_fd() == -1){
         if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) // fausse erreur EAGAIN = "reessaie plus tard" / EWOULDBLOCK = "si j'etais bloquant j'att"
             return (0);
         else{
@@ -138,13 +147,14 @@ int Epoll::accept_new_client(){
             return (0);
         }
     }
-    set_non_blocking(_new_fd);
-    this->_clients[_new_fd] = Client(_new_fd);
-    std::cout << "Server: connection etablished..." << std::endl;
-    ev.events = EPOLLIN | EPOLLET;
-    ev.data.fd = _new_fd;
+    set_non_blocking(serve.get_new_fd());
+    serve.add_client(serve.get_new_fd());
+    _fd_to_server[serve.get_new_fd()] = &serve;
+    std::cout << "Server: connection established (fd=" << serve.get_new_fd() << ")" << std::endl;
+    ev.events = EPOLLIN;
+    ev.data.fd = serve.get_new_fd();
     
-    if (epoll_ctl(_epoll_g, EPOLL_CTL_ADD, _new_fd, &ev) < 0)
+    if (epoll_ctl(_epoll_g, EPOLL_CTL_ADD, serve.get_new_fd(), &ev) < 0)
         std::cerr << "error : epoll fail to insert socket" << std::endl;
     else 
         this->_nb_socket++;
@@ -152,7 +162,9 @@ int Epoll::accept_new_client(){
 }
 
 int Epoll::handle_client_event(int n){
-    
+
+    struct epoll_event ev;
+
     if(send(events[n].data.fd, "Hello world!", 13, 0) == -1){
         std::cerr << "send failed: " << strerror(errno) << std::endl;
         return (0);
@@ -162,7 +174,6 @@ int Epoll::handle_client_event(int n){
     else
         this->_nb_socket--;
     close(events[n].data.fd);
-    _clients.erase(events[n].data.fd);
     return (1);
 }
 
@@ -174,29 +185,36 @@ int Epoll::serv_init(){
     std::cout << "server: waiting for connections..." << std::endl;
     
     if (!setup_epoll())
-        return (1);
-    
+        return (0);
+        
+    events = new epoll_event[MAXEPOLLSIZE](); // alloue la place et vide
     while(1){ // boucle pour accepter les prochaine conextion je crois / action
     
-        this->_nb_event = epoll_wait(this->_epoll_g, events, _nb_socket, -1);
+        this->_nb_event = epoll_wait(this->_epoll_g, events, MAXEPOLLSIZE, -1);
         if(this->_nb_event == -1){
             std::cerr << "epoll_wait failed: " << strerror(errno) << std::endl;
             delete[] events;
             break;
         }
-        for (int n = 0; n < this->_nb_event; n++){ // verif tout les event qu'il ya eu
-            // while (serve[i]){
-            if(events[n].data.fd == this->_sockfd){
-                if(!accept_new_client())
+        for (int n = 0; n < _nb_event; n++) {
+            int fd = events[n].data.fd;
+            bool is_server = false;
+
+            for (std::vector<Server>::iterator it = _serve.begin(); it != _serve.end(); ++it) {
+                if (fd == it->get_sockfd()) {
+                    accept_new_client(*it);
+                    is_server = true;
                     break;
+                }
             }
-            // }
-            else{
-                if(!handle_client_event(n))
-                    break;
+
+            if (!is_server) {
+                handle_client_event(n);
             }
         }
     }
-    close(this->_sockfd);
+    for (std::vector<Server>::iterator it = _serve.begin(); it != _serve.end(); ++it) {
+        close(it->get_sockfd());
+    }
     return(1);
 }

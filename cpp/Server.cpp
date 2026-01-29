@@ -6,7 +6,7 @@
 /*   By: zaboulaza <zaboulaza@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/27 20:28:17 by zaboulaza         #+#    #+#             */
-/*   Updated: 2026/01/29 03:48:30 by zaboulaza        ###   ########.fr       */
+/*   Updated: 2026/01/29 19:53:10 by zaboulaza        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,9 +18,16 @@ Server::Server(const Server &serv){
 
 Server &Server::operator=(const Server &serv){
     if (this != &serv){
-        
+        this->_port = serv._port;
+        this->_sockfd = serv._sockfd;
+        this->_new_fd = serv._new_fd;
+        this->_clients = serv._clients;
     }
     return (*this);
+}
+
+void Server::add_client(int socket){
+    this->_clients[socket] = Client(socket);
 }
 
 // int Server::set_non_blocking(int sockfd){

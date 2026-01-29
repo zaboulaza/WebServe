@@ -6,12 +6,28 @@
 /*   By: zaboulaza <zaboulaza@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/26 15:15:51 by zaboulaza         #+#    #+#             */
-/*   Updated: 2026/01/29 04:45:12 by zaboulaza        ###   ########.fr       */
+/*   Updated: 2026/01/29 19:54:03 by zaboulaza        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #pragma once
-#include "Epoll.hpp"
+// #include "Epoll.hpp"
+#include "Client.hpp"
+#include "Server.hpp"
+#include <iostream>
+#include <string>
+#include <vector>
+#include <stack>
+#include <map>
+#include <cstring>
+#include <sys/types.h>   // pour certains types réseau
+#include <sys/socket.h>  // pour socket(), bind(), etc.
+#include <netdb.h>       // pour getaddrinfo(), struct addrinfo, gai_strerror()
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <sys/epoll.h>
+#include <cerrno>
 
 #define BACKLOG 200 // nombre de demande de conextion en file d'attente possible
 #define MAXEPOLLSIZE 500 // nombre de conection possible au total 
@@ -28,28 +44,35 @@ class Server{
         // int serv_init();
         // int set_non_blocking(int sockfd);
         // int creat_and_bind_socket();
-        int setup_epoll();
-        int accept_new_client();
-        int handle_client_event(int n);
+        // int setup_epoll();
+        // int accept_new_client();
+        // int handle_client_event(int n);
 
         // struct addrinfo hints;      // les regle a respecter genre
         // struct addrinfo *servinfo;  // stock toute mes info (le port, IP, etc...)
         // struct addrinfo *tmp;       // tmp pour boucler sur servinfo
-        struct epoll_event ev;      // dit a epoll quoi surveiller et quoi renvoyer 
-        struct epoll_event *events; // epoll vas metre dedant les socket qui on declencher un event (epoll_wait)
-        struct sockaddr_storage client_addr; // peux contenir nimporte quelle IP 4 ou 6
+        // struct epoll_event ev;      // dit a epoll quoi surveiller et quoi renvoyer 
+        // struct epoll_event *events; // epoll vas metre dedant les socket qui on declencher un event (epoll_wait)
+        // struct sockaddr_storage client_addr; // peux contenir nimporte quelle IP 4 ou 6
 
         void set_port(char *av) {_port = av;};
         char *get_port() {return (_port);};
 
         void set_sockfd(int sockfd) {_sockfd = sockfd;};
         int  get_sockfd() {return (_sockfd);};
+        
+        // void set_addr_size(int size) {_addr_size = size;};
+        // int get_addr_size() {return (_addr_size);};
+        void set_new_fd(int fd) {_new_fd = fd;};
+        int get_new_fd(){return (_new_fd);};
+
+        void add_client(int socket);
 
     private:    
 
         char *_port;            // av[1]
         int _sockfd;            // socket server 
-        socklen_t _addr_size;   // taille de la structure ou il ya l'adress du client 
+        // socklen_t _addr_size;   // taille de la structure ou il ya l'adress du client 
         int _new_fd;            // le nouveau fd client
         std::map<int, Client> _clients; // stock les client dans un std::map pour chaque socket il y a son client
         
