@@ -6,7 +6,7 @@
 /*   By: zaboulaza <zaboulaza@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/22 13:39:04 by zaboulaza         #+#    #+#             */
-/*   Updated: 2026/01/29 04:23:15 by zaboulaza        ###   ########.fr       */
+/*   Updated: 2026/02/02 03:14:35 by zaboulaza        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,17 +18,13 @@ int main(int ac, char **av){
         std::cerr << "Error : need more arguments" << std::endl;
         return (0);
     }
-    
+
     Epoll epoll;
-    Server serv;
 
-    // std::vector<Server>
-
-    epoll.set_port(av, ac);
-    if (!epoll.serv_init())
-        return (1);
-
-    return 0;
+    epoll.set_ports(av, ac);
+    if (epoll.init_epoll_servers() == -1){
+        return (0);
+    }
+    
+    return (1);
 }
-
-// nginx + nom de regle ex : auto_index
