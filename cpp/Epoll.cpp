@@ -6,11 +6,12 @@
 /*   By: zaboulaza <zaboulaza@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/29 03:31:00 by zaboulaza         #+#    #+#             */
-/*   Updated: 2026/02/02 03:13:25 by zaboulaza        ###   ########.fr       */
+/*   Updated: 2026/02/05 10:04:43 by zaboulaza        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../hpp/Epoll.hpp"
+// #include "../hpp/Epoll_utils.hpp"
 
 Epoll::Epoll(const Epoll &epoll) {
     *this = epoll;
@@ -18,21 +19,11 @@ Epoll::Epoll(const Epoll &epoll) {
 
 Epoll &Epoll::operator=(const Epoll &epoll) {
     if (this != &epoll) {
-        // Copy member variables here when they are added
+        this->_servers = epoll._servers;
+        this->_epoll_g = epoll._epoll_g;
+        this->_nb_sockets = epoll._nb_sockets;
     }
     return *this;
-}
-
-void Epoll::set_ports(char **av, int ac) {
-    
-    // check if we had config files
-    // if we had config files parse them and set values in servers vector
-
-    for (int i = 1; i < ac; ++i) {        
-        Server server;
-        server.set_port(av[i]);
-        _servers.push_back(server);
-    }
 }
 
 int Epoll::set_non_blocking(int socket_fd) {
@@ -60,7 +51,7 @@ int Epoll::create_and_bind_socket(Server &server) {
     hints.ai_socktype = SOCK_STREAM; // respect TCP
     hints.ai_flags = AI_PASSIVE; // utilise l'IP de la machine automatiquement
 
-    if ((status = getaddrinfo(NULL, server.get_port(), &hints, &servinfo)) != 0) {
+    if ((status = getaddrinfo(NULL, server.get_port().c_str(), &hints, &servinfo)) != 0) {
         std::cerr << "getaddrinfo error: " << gai_strerror(status) << std::endl;
         return (-1);
     }

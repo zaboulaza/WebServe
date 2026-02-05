@@ -6,7 +6,7 @@
 /*   By: zaboulaza <zaboulaza@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/27 20:27:49 by zaboulaza         #+#    #+#             */
-/*   Updated: 2026/02/02 03:11:50 by zaboulaza        ###   ########.fr       */
+/*   Updated: 2026/02/05 04:39:22 by zaboulaza        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,6 +26,12 @@
 #include <sys/socket.h>
 #include <sys/epoll.h>
 #include <cerrno>
+#include <fstream>
+#include <map>
+#include <set>
+#include <string>
+#include <vector>
+#include <cstdlib>
 
 #define BACKLOG 200
 #define MAXEPOLLSIZE 500

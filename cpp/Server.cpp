@@ -6,7 +6,7 @@
 /*   By: zaboulaza <zaboulaza@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/27 20:28:17 by zaboulaza         #+#    #+#             */
-/*   Updated: 2026/02/02 03:12:12 by zaboulaza        ###   ########.fr       */
+/*   Updated: 2026/02/05 10:26:14 by zaboulaza        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,16 @@ Server &Server::operator=(const Server &server) {
         this->_port = server._port;
         this->_socketfd = server._socketfd;
         this->_clients_map = server._clients_map;
+        this->_root = server._root;
+        this->_index = server._index;
+        this->_allowed_methods = server._allowed_methods;
+        this->_auto_index = server._auto_index;
+        this->_cgi = server._cgi;
+        this->_error_pages = server._error_pages;
+        this->_upload_folder = server._upload_folder;
+        this->_redirect = server._redirect;
+        this->_is_good = server._is_good;
+        this->_locations = server._locations;
     }
     return *this;
 }

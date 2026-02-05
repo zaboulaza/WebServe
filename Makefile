@@ -1,12 +1,14 @@
 NAME = webserv
 
 CXX = c++
-CXXFLAGS = -Wall -Wextra -Werror -std=c++98
+CXXFLAGS = -std=c++98 -g3
 
 SRCS = 	main.cpp\
 		cpp/Server.cpp\
 		cpp/Client.cpp\
-		cpp/Epoll.cpp
+		cpp/Epoll.cpp\
+		cpp/Epoll_utils.cpp\
+		cpp/Location.cpp
 OBJS = $(SRCS:.cpp=.o)
 
 all: $(NAME)
