@@ -9,18 +9,21 @@ SRCS = 	main.cpp\
 		cpp/Epoll.cpp\
 		cpp/Epoll_utils.cpp\
 		cpp/Location.cpp
-OBJS = $(SRCS:.cpp=.o)
+OBJDIR = obj
+OBJS = $(SRCS:%.cpp=$(OBJDIR)/%.o)
 
 all: $(NAME)
 
 $(NAME): $(OBJS)
 	$(CXX) $(CXXFLAGS) $(OBJS) -o $(NAME)
 
-%.o: %.cpp
+$(OBJDIR)/%.o: %.cpp
+	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:
 	rm -f $(OBJS)
+	rm -rf $(OBJDIR)
 
 fclean: clean
 	rm -f $(NAME)
