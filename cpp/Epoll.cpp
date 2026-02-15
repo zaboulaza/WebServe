@@ -6,7 +6,7 @@
 /*   By: zaboulaza <zaboulaza@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/29 03:31:00 by zaboulaza         #+#    #+#             */
-/*   Updated: 2026/02/05 10:04:43 by zaboulaza        ###   ########.fr       */
+/*   Updated: 2026/02/15 15:38:14 by zaboulaza        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -157,10 +157,13 @@ int Epoll::accept_new_client(Server &server) {
 
 int Epoll::handle_client_event(int client_fd){
     struct epoll_event ev;
-
-    if (send(client_fd, "Hello world!", 13, 0) == -1) {
-        std::cerr << "send error: " << strerror(errno) << std::endl;
-        return (-1);
+    
+    for (size_t i = 0; i < _servers.size(); i++){
+        
+        if (_servers[i].has_client(client_fd) == true){
+            _servers[i].get_client(client_fd).recv_request();
+            break;
+        }
     }
     // ev.data.fd = client_fd;
     if (epoll_ctl(this->_epoll_g, EPOLL_CTL_DEL, client_fd, &ev) == -1) {

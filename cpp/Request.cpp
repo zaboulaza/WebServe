@@ -1,0 +1,125 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   Request.cpp                                        :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: zaboulaza <zaboulaza@student.42.fr>        +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2026/02/15 00:55:26 by zaboulaza         #+#    #+#             */
+/*   Updated: 2026/02/15 22:05:27 by zaboulaza        ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "../hpp/Request.hpp"
+
+Request::Request(const Request &request){
+    *this = request;
+}
+
+Request &Request::operator=(const Request &request){
+    if (this != &request){
+        this->_header = request._header;
+        this->_method = request._method;
+        this->_path = request._path;
+        this->_version = request._version;
+        this->_content_length = request._content_length;
+        this->_body = request._body;
+    }
+    return(*this);
+}
+
+std::vector<std::string> Request::split(std::string str, char delimiter) {
+    std::vector<std::string> res;
+    size_t pos;
+    
+    while ((pos = str.find(delimiter)) != std::string::npos) {
+        std::string token = str.substr(0, pos);
+        if (!token.empty())
+            res.push_back(token);
+        str.erase(0, pos + 1);
+    }
+    if (!str.empty())
+        res.push_back(str);
+    
+    return res;
+}
+
+std::vector<std::string> Request::split_first(std::string str, char delimiter) {
+    std::vector<std::string> res;
+    size_t pos;
+    
+    if ((pos = str.find(delimiter)) != std::string::npos) {
+        std::string token = str.substr(0, pos);
+        if (!token.empty())
+            res.push_back(token);
+        str.erase(0, pos + 1);
+    }
+    if (!str.empty())
+        res.push_back(str);
+    
+    return res;
+}
+
+
+bool Request::set_first_line(std::vector<std::string> line){
+    
+    if (line.size() != 3)
+        return (false);
+    else if (line[0] != "GET" && line[0] != "POST" && line[0] != "DELETE")
+        return (false);
+    else if (line[1][0] != '/' || line[1].find("..") != std::string::npos)
+        return(false);
+    else if (line[2] != "HTTP/1.1" && line[2] != "HTTP/1.0")
+        return (false);
+    this->_method = line[0];
+    this->_path = line[1];
+    this->_version = line[2];
+    return (true);
+}
+
+std::string Request::trim(std::string str) {
+    size_t start = str.find_first_not_of(" \t\n\r\f\v\"");
+    if (start == std::string::npos)
+        return ("");
+    size_t end = str.find_last_not_of(" \t\n\r\f\v\"");
+    return str.substr(start, end - start + 1);
+}
+
+int Request::parse_header(std::string str){
+    
+    this->_vec_header = split(str, '\n');
+    std::vector<std::string> line;
+    for (size_t i = 0; i < _vec_header.size() ; i++){
+        
+        if (!_vec_header[i].empty() && _vec_header[i][_vec_header[i].size() - 1] == '\r')
+            _vec_header[i] = _vec_header[i].substr(0, _vec_header[i].size() - 1);
+        
+        std::cout << "[" << _vec_header[i] << "]";
+        if (!_vec_header[i].empty()){
+            line = split_first(_vec_header[i], ':');
+            for(size_t i = 0; i < line.size(); i++){
+                line[i] = trim(line[i]);
+            }
+            std::cout << " ----> ";
+            for (size_t i = 0; i < line.size(); i++){
+                std::cout << "[" << line[i] << "] ";
+            }
+            std::cout << std::endl;
+        }
+    }
+    std::cout << "size = " << _vec_header.size() << std::endl;
+    
+    // for (size_t i = 0; i < _vec_header.size(); i++){
+        
+    //     if (!_vec_header[i].empty() && _vec_header[i][_vec_header[i].size() - 1] == '\r')
+    //         _vec_header[i] = _vec_header[i].substr(0, _vec_header[i].size() - 1);
+    //     if (i == 0){
+    //         line = split(_vec_header[i], ' ');
+    //         if (set_first_line(line) == false)
+    //             return (-1);
+    //     }
+    //     // else if ()
+    // }
+
+    return(1);
+}

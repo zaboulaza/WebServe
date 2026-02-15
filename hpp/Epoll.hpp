@@ -6,7 +6,7 @@
 /*   By: zaboulaza <zaboulaza@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/29 03:31:10 by zaboulaza         #+#    #+#             */
-/*   Updated: 2026/02/05 06:07:17 by zaboulaza        ###   ########.fr       */
+/*   Updated: 2026/02/15 02:34:40 by zaboulaza        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,8 +43,6 @@ class Epoll {
         Server creat_serve(std::vector<std::string> vec, size_t &i, Server serve);
         Location creat_location(std::vector<std::string> vec, size_t &i);
         
-            
-
     private:
 
         std::vector<Server> _servers;
@@ -52,3 +50,4 @@ class Epoll {
         int _nb_sockets;
 
 };
+

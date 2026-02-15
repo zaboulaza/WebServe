@@ -6,7 +6,7 @@
 /*   By: zaboulaza <zaboulaza@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/27 20:28:17 by zaboulaza         #+#    #+#             */
-/*   Updated: 2026/02/05 10:26:14 by zaboulaza        ###   ########.fr       */
+/*   Updated: 2026/02/15 05:30:32 by zaboulaza        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,4 +41,16 @@ void Server::add_client(int clientfd) {
 
 void Server::remove_client(int clientfd) {
     this->_clients_map.erase(clientfd);
+}
+
+bool Server::has_client(int clientfd){
+    std::map<int, Client>::iterator it;
+    it = _clients_map.find(clientfd);
+    if (it == _clients_map.end())
+        return (false);
+    return (true);
+}
+
+Client &Server::get_client(int clientfd){
+    return (_clients_map[clientfd]);
 }

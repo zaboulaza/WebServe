@@ -6,7 +6,7 @@
 /*   By: zaboulaza <zaboulaza@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/26 15:15:51 by zaboulaza         #+#    #+#             */
-/*   Updated: 2026/02/05 10:41:46 by zaboulaza        ###   ########.fr       */
+/*   Updated: 2026/02/15 05:30:17 by zaboulaza        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,6 +26,8 @@ class Server{
         
         void add_client(int clientfd);
         void remove_client(int clientfd);
+        bool has_client(int clientfd);
+        Client &get_client(int clientfd);
     
 
         void set_port(std::string port) { _port = port; };
@@ -60,7 +62,7 @@ class Server{
         
         bool get_is_good() { return _is_good; };
         void set_is_good(bool is_good) { _is_good = is_good; };
-
+        
         std::vector<Location> get_locations() { return _locations; };
         void set_locations(std::vector<Location> locations) { _locations = locations; };
 
