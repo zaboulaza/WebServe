@@ -6,7 +6,7 @@
 /*   By: zaboulaza <zaboulaza@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/15 00:55:12 by zaboulaza         #+#    #+#             */
-/*   Updated: 2026/02/15 22:06:00 by zaboulaza        ###   ########.fr       */
+/*   Updated: 2026/02/16 20:20:53 by zaboulaza        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,8 +46,9 @@ class Request {
     std::vector<std::string> split(std::string str, char delimiter);
     std::vector<std::string> split_first(std::string str, char delimiter);
     int parse_header(std::string head);
-    bool set_first_line(std::vector<std::string> line);
+    bool set_first_line(std::string str);
     std::string trim(std::string str);
+    bool pars_head(std::string str);
     
     private:
 

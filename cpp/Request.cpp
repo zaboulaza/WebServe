@@ -6,7 +6,7 @@
 /*   By: zaboulaza <zaboulaza@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/15 00:55:26 by zaboulaza         #+#    #+#             */
-/*   Updated: 2026/02/15 22:05:27 by zaboulaza        ###   ########.fr       */
+/*   Updated: 2026/02/17 00:54:08 by zaboulaza        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,8 +50,7 @@ std::vector<std::string> Request::split_first(std::string str, char delimiter) {
     
     if ((pos = str.find(delimiter)) != std::string::npos) {
         std::string token = str.substr(0, pos);
-        if (!token.empty())
-            res.push_back(token);
+        res.push_back(token);
         str.erase(0, pos + 1);
     }
     if (!str.empty())
@@ -60,8 +59,10 @@ std::vector<std::string> Request::split_first(std::string str, char delimiter) {
     return res;
 }
 
-
-bool Request::set_first_line(std::vector<std::string> line){
+bool Request::set_first_line(std::string str){
+    
+    std::vector<std::string> line;
+    line = split(str, ' ');
     
     if (line.size() != 3)
         return (false);
@@ -85,41 +86,48 @@ std::string Request::trim(std::string str) {
     return str.substr(start, end - start + 1);
 }
 
+bool Request::pars_head(std::string str){
+
+    std::vector<std::string> line;
+    line = split_first(str, ':');
+    for(size_t i = 0; i < line.size(); i++){
+        line[i] = trim(line[i]);
+    }
+    if (line.size() != 2)
+        return (false);
+    else if (line[0].empty())
+        return (false);
+    else if (line[0] == "Content-length" && !line[1].empty()){
+        _content_length = atoi(line[1].c_str());
+        return (true);
+    }
+    else{
+        _header[line[0]] = line[1];
+    }
+    return (true);
+}
+
 int Request::parse_header(std::string str){
     
     this->_vec_header = split(str, '\n');
-    std::vector<std::string> line;
-    for (size_t i = 0; i < _vec_header.size() ; i++){
+    
+    for (size_t i = 0; i < _vec_header.size(); i++){
         
         if (!_vec_header[i].empty() && _vec_header[i][_vec_header[i].size() - 1] == '\r')
             _vec_header[i] = _vec_header[i].substr(0, _vec_header[i].size() - 1);
-        
-        std::cout << "[" << _vec_header[i] << "]";
-        if (!_vec_header[i].empty()){
-            line = split_first(_vec_header[i], ':');
-            for(size_t i = 0; i < line.size(); i++){
-                line[i] = trim(line[i]);
-            }
-            std::cout << " ----> ";
-            for (size_t i = 0; i < line.size(); i++){
-                std::cout << "[" << line[i] << "] ";
-            }
-            std::cout << std::endl;
+        if (i == 0){
+            if (set_first_line(_vec_header[i]) == false)
+                return (-1);
+        }
+        else if (!_vec_header[i].empty()){
+            if (pars_head(_vec_header[i]) == false)
+                return (-1);
+        }
+        else if (_vec_header[i].empty()){
+            // j'ai finin le header
+            // faire une fonction qui regarde si body ou pas 
+            // recuperee le body
         }
     }
-    std::cout << "size = " << _vec_header.size() << std::endl;
-    
-    // for (size_t i = 0; i < _vec_header.size(); i++){
-        
-    //     if (!_vec_header[i].empty() && _vec_header[i][_vec_header[i].size() - 1] == '\r')
-    //         _vec_header[i] = _vec_header[i].substr(0, _vec_header[i].size() - 1);
-    //     if (i == 0){
-    //         line = split(_vec_header[i], ' ');
-    //         if (set_first_line(line) == false)
-    //             return (-1);
-    //     }
-    //     // else if ()
-    // }
-
     return(1);
 }
