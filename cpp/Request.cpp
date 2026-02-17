@@ -6,7 +6,7 @@
 /*   By: zaboulaza <zaboulaza@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/15 00:55:26 by zaboulaza         #+#    #+#             */
-/*   Updated: 2026/02/17 00:54:08 by zaboulaza        ###   ########.fr       */
+/*   Updated: 2026/02/17 19:33:06 by zaboulaza        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -123,11 +123,8 @@ int Request::parse_header(std::string str){
             if (pars_head(_vec_header[i]) == false)
                 return (-1);
         }
-        else if (_vec_header[i].empty()){
-            // j'ai finin le header
-            // faire une fonction qui regarde si body ou pas 
-            // recuperee le body
-        }
+        else if (_vec_header[i].empty())
+            return (1);
     }
     return(1);
 }
