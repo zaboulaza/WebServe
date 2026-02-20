@@ -6,7 +6,7 @@
 /*   By: zaboulaza <zaboulaza@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/15 00:55:12 by zaboulaza         #+#    #+#             */
-/*   Updated: 2026/02/16 20:20:53 by zaboulaza        ###   ########.fr       */
+/*   Updated: 2026/02/20 16:17:35 by zaboulaza        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,27 +36,33 @@
 #define MAXEPOLLSIZE 500
 
 class Request {
-    
+
     public:
 
-    Request() {};
-    ~Request() {};
-    Request(const Request &request);
-    Request &operator=(const Request &request);
-    std::vector<std::string> split(std::string str, char delimiter);
-    std::vector<std::string> split_first(std::string str, char delimiter);
-    int parse_header(std::string head);
-    bool set_first_line(std::string str);
-    std::string trim(std::string str);
-    bool pars_head(std::string str);
-    
+        Request() : _content_length(-1) {};
+        ~Request() {};
+        Request(const Request &request);
+        Request &operator=(const Request &request);
+        std::vector<std::string> split(std::string str, char delimiter);
+        std::vector<std::string> split_first(std::string str, char delimiter);
+        int parse_header(std::string head);
+        bool set_first_line(std::string str);
+        std::string trim(std::string str);
+        bool pars_head(std::string str);
+        int validate_header();
+
+        std::string get_method() const { return _method; }
+        int get_content_length() const { return _content_length; }
+
+        void set_body(std::string body) { _body = body; }
+
     private:
 
-    std::map<std::string, std::string> _header;
-    std::string _method;
-    std::string _path;
-    std::string _version;
-    int _content_length;
-    std::string _body;
-    std::vector<std::string> _vec_header;
+        std::map<std::string, std::string> _header;
+        std::string _method;
+        std::string _path;
+        std::string _version;
+        int _content_length;
+        std::string _body;
+        std::vector<std::string> _vec_header;
 };

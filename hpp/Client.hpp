@@ -6,7 +6,7 @@
 /*   By: zaboulaza <zaboulaza@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/27 20:27:49 by zaboulaza         #+#    #+#             */
-/*   Updated: 2026/02/17 19:53:11 by zaboulaza        ###   ########.fr       */
+/*   Updated: 2026/02/20 16:40:19 by zaboulaza        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,8 @@ class Client {
         Client(int fd) : _socket_fd(fd) {};
 
         int recv_request();
-        bool need_to_recup_body(std::string header);
+        bool recup_body_or_not(std::string header);
+        std::string get_body(std::string body);
 
     private:
 
@@ -33,3 +34,4 @@ class Client {
         Request _request;
 
 };
+

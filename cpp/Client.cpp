@@ -6,7 +6,7 @@
 /*   By: zaboulaza <zaboulaza@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/26 15:16:56 by zaboulaza         #+#    #+#             */
-/*   Updated: 2026/02/17 20:02:30 by zaboulaza        ###   ########.fr       */
+/*   Updated: 2026/02/20 16:50:25 by zaboulaza        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,11 +23,23 @@ Client &Client::operator=(const Client &client) {
     return *this;
 }
 
+std::string Client::get_body(std::string body){
+    char tmp[5000];
+    
+    while (body.size() < _request.get_content_length()){
+        int bytes = recv(_socket_fd, tmp, 5000, 0);
+        if (bytes <= 0)
+            break;
+        body.append(tmp, bytes);
+    }
+    return (body);
+}
+
 int Client::recv_request(){
 
     std::string str;
-    std::string _header;
-    std::string _body;
+    std::string header;
+    std::string body;
     char tmp[5000];
     int bytes;
 
@@ -41,23 +53,23 @@ int Client::recv_request(){
         str.append(tmp, bytes);
     }
     
-    _header = str.substr(0, str.find("\r\n\r\n") + 4);
-    _body = str.substr(str.find("\r\n\r\n") + 4);
+    header = str.substr(0, str.find("\r\n\r\n") + 4);
+    body = str.substr(str.find("\r\n\r\n") + 4);
 
     std::cout << str << std::endl;
 
-    if (this->_request.parse_header(_header) == -1){
+    if (this->_request.parse_header(header) == -1){
         std::cerr << "error bas header http" << std::endl;   
         return (-1);
     }
-    else if (need_to_recup_body(_header)){
-        if (/*header_good_for_body(_header) == false*/){
-            // std::cerr << err << std::endl;
-            // return (-1);
-        }
-        // ici je sais pas trop comment recupere le body et voir si j'ai deja une partie ou pas ?
-        // _request.set_body(body);
+    
+    int validate = _request.validate_header();
+    if (validate == -1)
+        return (-1);
+    if (_request.get_method() == "POST"){
+        std::string tmp_body = get_body(body);
+        _request.set_body(tmp_body);
     }
-
+    
     return (1);
 }
