@@ -6,7 +6,7 @@
 /*   By: zaboulaza <zaboulaza@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/15 00:55:26 by zaboulaza         #+#    #+#             */
-/*   Updated: 2026/02/25 05:01:20 by zaboulaza        ###   ########.fr       */
+/*   Updated: 2026/02/25 15:53:07 by zaboulaza        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -131,8 +131,10 @@ int Request::parse_header(std::string str){
     return(1);
 }
 
-int Request::validate_header(){
-    
+int Request::validate_header(std::set<std::string> allowed_methods){
+
+    if (allowed_methods.find(_method) == allowed_methods.end())
+        return (405);
     if (_method == "POST" && _content_length == -1){
         return (411);
     }

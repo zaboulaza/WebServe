@@ -6,7 +6,7 @@
 /*   By: zaboulaza <zaboulaza@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/03 17:53:10 by zaboulaza         #+#    #+#             */
-/*   Updated: 2026/02/15 01:38:26 by zaboulaza        ###   ########.fr       */
+/*   Updated: 2026/02/25 14:40:57 by zaboulaza        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,15 +37,18 @@ std::string Epoll::trim(std::string str) {
 }
 
 std::vector<std::string> Epoll::split(std::string str, char delimiter) {
-
     std::vector<std::string> res;
-    int pos = 0;
-    while(pos < str.size() && (pos = str.find(delimiter)) != std::string::npos) {
-        pos = str.find(delimiter);
-        res.push_back(str.substr(0,pos));
-        str.erase(0,pos+1);
+    size_t pos;
+    
+    while ((pos = str.find(delimiter)) != std::string::npos) {
+        std::string token = str.substr(0, pos);
+        if (!token.empty())
+            res.push_back(token);
+        str.erase(0, pos + 1);
     }
-    res.push_back(str);
+    if (!str.empty())
+        res.push_back(str);
+    
     return res;
 }
 
@@ -75,7 +78,6 @@ void Epoll::set_values_server(Server &serve, std::vector<std::string> line){
 
     if (line[0] == "listen"){
         if (line.size() != 2){
-            serve.set_is_good(false);
             serve = Server();
             return;
         }
@@ -83,7 +85,6 @@ void Epoll::set_values_server(Server &serve, std::vector<std::string> line){
     }
     else if (line[0] == "root"){
         if (line.size() != 2){
-            serve.set_is_good(false);
             serve = Server();
             return;
         }
@@ -91,7 +92,6 @@ void Epoll::set_values_server(Server &serve, std::vector<std::string> line){
     }
     else if (line[0] == "index"){
         if (line.size() != 2){
-            serve.set_is_good(false);
             serve = Server();
             return;
         }
@@ -100,13 +100,16 @@ void Epoll::set_values_server(Server &serve, std::vector<std::string> line){
     else if (line[0] == "allowed_methods"){
         std::set<std::string> methods;
         for (size_t j = 1; j < line.size(); j++){
+            if (line[j] != "GET" && line[j] != "POST" && line[j] != "DELETE"){
+                serve = Server();
+                return;
+            }
             methods.insert(line[j]);
         }
         serve.set_allowed_methods(methods);
     }
     else if (line[0] == "auto_index"){
         if (line.size() != 2){
-            serve.set_is_good(false);
             serve = Server();
             return;
         }
@@ -117,7 +120,6 @@ void Epoll::set_values_server(Server &serve, std::vector<std::string> line){
     }
     else if (line[0] == "cgi"){
         if (line.size() != 3){
-            serve.set_is_good(false);
             serve = Server();
             return;
         }
@@ -127,7 +129,6 @@ void Epoll::set_values_server(Server &serve, std::vector<std::string> line){
     }
     else if (line[0] == "error_page"){
         if (line.size() != 3){
-            serve.set_is_good(false);
             serve = Server();
             return;
         }
@@ -138,7 +139,6 @@ void Epoll::set_values_server(Server &serve, std::vector<std::string> line){
     }
     else if (line[0] == "upload_folder"){
         if (line.size() != 2){
-            serve.set_is_good(false);
             serve = Server();
             return;
         }
@@ -146,7 +146,6 @@ void Epoll::set_values_server(Server &serve, std::vector<std::string> line){
     }
     else if (line[0] == "redirect"){
         if (line.size() != 2){
-            serve.set_is_good(false);
             serve = Server();
             return;
         }

@@ -6,11 +6,21 @@
 /*   By: zaboulaza <zaboulaza@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/27 20:28:17 by zaboulaza         #+#    #+#             */
-/*   Updated: 2026/02/15 05:30:32 by zaboulaza        ###   ########.fr       */
+/*   Updated: 2026/02/25 15:40:33 by zaboulaza        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../hpp/Server.hpp"
+
+Server::Server(){
+    _is_good = false;
+    _root = "./www";
+    _index = "index.html";
+    _allowed_methods.insert("GET");
+    _allowed_methods.insert("POST");
+    _allowed_methods.insert("DELETE");
+    _auto_index = false;
+}
 
 Server::Server(const Server &server) {
     *this = server;

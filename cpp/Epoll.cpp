@@ -6,7 +6,7 @@
 /*   By: zaboulaza <zaboulaza@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/29 03:31:00 by zaboulaza         #+#    #+#             */
-/*   Updated: 2026/02/15 15:38:14 by zaboulaza        ###   ########.fr       */
+/*   Updated: 2026/02/25 15:42:19 by zaboulaza        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -161,7 +161,7 @@ int Epoll::handle_client_event(int client_fd){
     for (size_t i = 0; i < _servers.size(); i++){
         
         if (_servers[i].has_client(client_fd) == true){
-            _servers[i].get_client(client_fd).recv_request();
+            _servers[i].get_client(client_fd).recv_request(_servers[i]);
             break;
         }
     }

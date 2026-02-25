@@ -6,11 +6,12 @@
 /*   By: zaboulaza <zaboulaza@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/26 15:16:56 by zaboulaza         #+#    #+#             */
-/*   Updated: 2026/02/25 03:14:57 by zaboulaza        ###   ########.fr       */
+/*   Updated: 2026/02/25 18:10:12 by zaboulaza        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../hpp/Client.hpp"
+#include "../hpp/Server.hpp"
 
 Client::Client(const Client &client) {
     *this = client;
@@ -35,7 +36,7 @@ std::string Client::get_body(std::string body){
     return (body);
 }
 
-int Client::recv_request(){
+int Client::recv_request(Server &server){
 
     std::string str;
     std::string header;
@@ -63,11 +64,11 @@ int Client::recv_request(){
         validate = 400;   
     }
     if (validate == 1)
-        validate = _request.validate_header();
+        validate = _request.validate_header(server.get_allowed_methods());
     Response responce;
     responce.set_socket_client(this->_socket_fd);
     if (validate != 1){
-        responce.handel_erreur_responce(_socket_fd ,validate);
+        responce.handle_erreur_response(validate);
         return (-1);
     }
     else if (_request.get_method() == "POST"){
@@ -75,7 +76,7 @@ int Client::recv_request(){
         _request.set_body(tmp_body);
     }
 
-    responce.response_http(_request.get_version());
+    responce.response_http(server, _request);
     
     return (1);
 }

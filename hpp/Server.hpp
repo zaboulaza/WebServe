@@ -6,7 +6,7 @@
 /*   By: zaboulaza <zaboulaza@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/26 15:15:51 by zaboulaza         #+#    #+#             */
-/*   Updated: 2026/02/15 05:30:17 by zaboulaza        ###   ########.fr       */
+/*   Updated: 2026/02/25 14:32:39 by zaboulaza        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,7 +19,7 @@ class Server{
     
     public:
     
-        Server() {};
+        Server();
         ~Server() {};
         Server(const Server &server);
         Server &operator=(const Server &server);
