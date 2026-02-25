@@ -1,38 +1,35 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   Client.hpp                                         :+:      :+:    :+:   */
+/*   Response.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: zaboulaza <zaboulaza@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/01/27 20:27:49 by zaboulaza         #+#    #+#             */
-/*   Updated: 2026/02/24 09:24:02 by zaboulaza        ###   ########.fr       */
+/*   Created: 2026/02/24 09:12:01 by zaboulaza         #+#    #+#             */
+/*   Updated: 2026/02/25 03:06:09 by zaboulaza        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #pragma once
 
 #include "Request.hpp"
-#include "Response.hpp"
 
-class Client {
-
+class Response {
+  
     public:
 
-        Client() {};
-        ~Client() {};
-        Client(const Client &client);
-        Client &operator=(const Client &client);
-        Client(int fd) : _socket_fd(fd) {};
+        Response(){};
+        ~Response(){};
+        Response(const Response &response);
+        Response &operator=(const Response &response);
 
-        int recv_request();
-        bool recup_body_or_not(std::string header);
-        std::string get_body(std::string body);
+        void handel_erreur_responce(int socket_fd ,int err_code);
+        void response_http(std::string _version);
+
+        void set_socket_client(int socket) {this->_socket_client = socket;};
 
     private:
 
-        int _socket_fd;
-        Request _request;
-
+        int _socket_client;
+    
 };
-

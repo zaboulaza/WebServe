@@ -6,7 +6,7 @@
 /*   By: zaboulaza <zaboulaza@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/26 15:16:56 by zaboulaza         #+#    #+#             */
-/*   Updated: 2026/02/20 16:50:25 by zaboulaza        ###   ########.fr       */
+/*   Updated: 2026/02/25 03:14:57 by zaboulaza        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,18 +58,24 @@ int Client::recv_request(){
 
     std::cout << str << std::endl;
 
+    int validate = 1;
     if (this->_request.parse_header(header) == -1){
-        std::cerr << "error bas header http" << std::endl;   
+        validate = 400;   
+    }
+    if (validate == 1)
+        validate = _request.validate_header();
+    Response responce;
+    responce.set_socket_client(this->_socket_fd);
+    if (validate != 1){
+        responce.handel_erreur_responce(_socket_fd ,validate);
         return (-1);
     }
-    
-    int validate = _request.validate_header();
-    if (validate == -1)
-        return (-1);
-    if (_request.get_method() == "POST"){
+    else if (_request.get_method() == "POST"){
         std::string tmp_body = get_body(body);
         _request.set_body(tmp_body);
     }
+
+    responce.response_http(_request.get_version());
     
     return (1);
 }

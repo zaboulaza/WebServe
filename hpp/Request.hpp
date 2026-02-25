@@ -6,7 +6,7 @@
 /*   By: zaboulaza <zaboulaza@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/15 00:55:12 by zaboulaza         #+#    #+#             */
-/*   Updated: 2026/02/20 16:17:35 by zaboulaza        ###   ########.fr       */
+/*   Updated: 2026/02/25 03:14:50 by zaboulaza        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,6 +55,7 @@ class Request {
         int get_content_length() const { return _content_length; }
 
         void set_body(std::string body) { _body = body; }
+        std::string get_version() const {return _version;};
 
     private:
 

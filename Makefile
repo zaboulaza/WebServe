@@ -9,7 +9,8 @@ SRCS = 	main.cpp\
 		cpp/Epoll.cpp\
 		cpp/Epoll_utils.cpp\
 		cpp/Location.cpp\
-		cpp/Request.cpp
+		cpp/Request.cpp\
+		cpp/Response.cpp
 
 OBJDIR = obj
 OBJS = $(SRCS:%.cpp=$(OBJDIR)/%.o)
