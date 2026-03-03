@@ -6,7 +6,7 @@
 /*   By: zaboulaza <zaboulaza@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/27 20:28:17 by zaboulaza         #+#    #+#             */
-/*   Updated: 2026/02/25 15:40:33 by zaboulaza        ###   ########.fr       */
+/*   Updated: 2026/03/03 13:25:00 by zaboulaza        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,7 @@ Server::Server(){
     _allowed_methods.insert("POST");
     _allowed_methods.insert("DELETE");
     _auto_index = false;
+    _upload_folder = "./www/uploads";
 }
 
 Server::Server(const Server &server) {

@@ -6,7 +6,7 @@
 /*   By: zaboulaza <zaboulaza@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/24 09:11:29 by zaboulaza         #+#    #+#             */
-/*   Updated: 2026/02/25 18:10:50 by zaboulaza        ###   ########.fr       */
+/*   Updated: 2026/03/03 13:22:22 by zaboulaza        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,6 +28,8 @@ void Response::handle_erreur_response(int err_code){
         err_message = "HTTP/1.1 404 Not Found\r\n\r\n";
     else if (err_code == 405)
         err_message = "HTTP/1.1 405 Method Not Allowed\r\n\r\n";
+    else if (err_code == 500)
+        err_message = "HTTP/1.1 500 Internal Server Error\r\n\r\n";
     
     send(_socket_client, err_message.c_str(), err_message.size(), 0);
 }
@@ -67,6 +69,35 @@ int Response::handle_GET_response(Server &server, Request &request){
     return (1);
 }
 
+int Response::handle_POST_response(Server &server, Request &request){
+    
+    std::string response;
+    std::string path;
+    time_t timestamp = time(NULL);
+    std::stringstream ss;
+    ss << timestamp;
+    
+    std::string  file_name =  ss.str() + ".dat";
+    path = server.get_upload_folder() + "/" + file_name;
+    
+    std::ofstream file(path.c_str());
+    
+    if (!file){
+        handle_erreur_response(500);
+        return (-1);
+    }
+    file << request.get_body();
+    file.close();
+    
+    response = request.get_version() + " 201 Created\r\n";
+    response += "Content-Length: 0\r\n";
+    response += "\r\n";
+
+    send(_socket_client, response.c_str(), response.size(), 0);
+    
+    return(1);
+}
+
 void Response::response_http(Server &server , Request &request){
     
     std::string response;
@@ -79,5 +110,7 @@ void Response::response_http(Server &server , Request &request){
     
     if (request.get_method() == "GET")
         handle_GET_response(server, request);
+    if (request.get_method() == "POST")
+        handle_POST_response(server, request);
 
 }

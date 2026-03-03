@@ -6,7 +6,7 @@
 /*   By: zaboulaza <zaboulaza@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/15 00:55:12 by zaboulaza         #+#    #+#             */
-/*   Updated: 2026/02/25 17:46:49 by zaboulaza        ###   ########.fr       */
+/*   Updated: 2026/03/03 13:08:30 by zaboulaza        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,6 +33,7 @@
 #include <vector>
 #include <cstdlib>
 #include <sstream>
+#include <fstream>
 #define BACKLOG 200
 #define MAXEPOLLSIZE 500
 
@@ -59,6 +60,7 @@ class Request {
         std::string get_version() const {return _version;};
 
         std::string get_path() const { return _path; };
+        std::string get_body() const { return _body; };
 
     private:
 
