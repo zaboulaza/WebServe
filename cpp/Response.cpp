@@ -6,7 +6,7 @@
 /*   By: zaboulaza <zaboulaza@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/24 09:11:29 by zaboulaza         #+#    #+#             */
-/*   Updated: 2026/03/03 13:22:22 by zaboulaza        ###   ########.fr       */
+/*   Updated: 2026/03/04 14:52:14 by zaboulaza        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -98,6 +98,14 @@ int Response::handle_POST_response(Server &server, Request &request){
     return(1);
 }
 
+int Response::handle_DELETE_response(Server &server, Request &request){
+    
+    std::string response;
+    
+    
+    return (1);
+}
+
 void Response::response_http(Server &server , Request &request){
     
     std::string response;
@@ -110,7 +118,9 @@ void Response::response_http(Server &server , Request &request){
     
     if (request.get_method() == "GET")
         handle_GET_response(server, request);
-    if (request.get_method() == "POST")
+    else if (request.get_method() == "POST")
         handle_POST_response(server, request);
+    else if (request.get_method() == "DELETE")
+        handle_DELETE_response(server, request);
 
 }

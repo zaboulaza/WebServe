@@ -6,7 +6,7 @@
 /*   By: zaboulaza <zaboulaza@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/24 09:12:01 by zaboulaza         #+#    #+#             */
-/*   Updated: 2026/03/02 10:13:36 by zaboulaza        ###   ########.fr       */
+/*   Updated: 2026/03/04 14:49:24 by zaboulaza        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,6 +30,7 @@ class Response {
         void response_http(Server &server, Request &request);
         int handle_GET_response(Server &server, Request &request);
         int handle_POST_response(Server &server, Request &request);
+        int handle_DELETE_response(Server &server, Request &request);
         
 
         void set_socket_client(int socket) {this->_socket_client = socket;};
