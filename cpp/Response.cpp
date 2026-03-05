@@ -6,7 +6,7 @@
 /*   By: zaboulaza <zaboulaza@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/24 09:11:29 by zaboulaza         #+#    #+#             */
-/*   Updated: 2026/03/04 14:52:14 by zaboulaza        ###   ########.fr       */
+/*   Updated: 2026/03/05 17:23:12 by zaboulaza        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -101,20 +101,25 @@ int Response::handle_POST_response(Server &server, Request &request){
 int Response::handle_DELETE_response(Server &server, Request &request){
     
     std::string response;
+    std::string path;
+
+    path = server.get_root() + request.get_path();
     
-    
+    int result = std::remove(path.c_str());
+    if (result == 0){
+        response = request.get_version() + " 204 No Content\r\n\r\n";
+        send(_socket_client, response.c_str(), response.size(), 0);
+    }
+    else{
+        handle_erreur_response(404);
+        return (-1);
+    } 
     return (1);
 }
 
 void Response::response_http(Server &server , Request &request){
     
     std::string response;
-    
-    // response += request.get_version();
-    // response += " 200 OK\r\n";
-    // response += "Content-Length: 11\r\n";
-    // response += "Content-Type: text/html\r\n";
-    // response += "\r\n";
     
     if (request.get_method() == "GET")
         handle_GET_response(server, request);
