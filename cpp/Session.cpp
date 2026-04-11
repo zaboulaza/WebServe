@@ -42,11 +42,33 @@ std::string SessionManager::get_or_create(const std::string &session_id, bool &i
             return session_id;
         }
     }
+    // Purge périodique : si le nombre de sessions dépasse le max, on nettoie d'abord
+    if ((int)_sessions.size() >= SESSION_MAX)
+        cleanup_expired();
+    // Si toujours trop grand après la purge, on vide tout (évite la fuite)
+    if ((int)_sessions.size() >= SESSION_MAX)
+        _sessions.clear();
+
     // Nouvelle session
     is_new = true;
     std::string new_id = generate_id();
     _sessions[new_id] = SessionData();
     return new_id;
+}
+
+// Supprime les sessions inactives depuis plus de SESSION_TTL secondes.
+void SessionManager::cleanup_expired() {
+    time_t now = time(NULL);
+    std::map<std::string, SessionData>::iterator it = _sessions.begin();
+    while (it != _sessions.end()) {
+        if (difftime(now, it->second.last_seen) > SESSION_TTL) {
+            std::map<std::string, SessionData>::iterator to_erase = it;
+            ++it;
+            _sessions.erase(to_erase);
+        } else {
+            ++it;
+        }
+    }
 }
 
 void SessionManager::touch(const std::string &session_id) {

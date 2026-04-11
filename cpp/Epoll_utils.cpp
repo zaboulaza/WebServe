@@ -161,7 +161,7 @@ void Epoll::set_values_server(Server &serve, std::vector<std::string> line)
 			serve = Server();
 			return ;
 		}
-		std::map<int, std::string> error_pages;
+		std::map<int, std::string> error_pages = serve.get_error_pages();
 		code = std::atoi(line[1].c_str());
 		error_pages[code] = line[2];
 		serve.set_error_pages(error_pages);
@@ -413,8 +413,10 @@ Server Epoll::creat_serve(std::vector<std::string> vec, size_t &i, Server serve)
 	i++;
 	while (i < vec.size() && vec[i] != "}")
 	{
-		while (is_empty(vec[i]))
+		while (i < vec.size() && is_empty(vec[i]))
 			i++;
+		if (i >= vec.size() || vec[i] == "}")
+			break;
 		std::vector<std::string> line = split(vec[i], ' ');
 		if (line.size() < 2)
 		{
@@ -469,7 +471,7 @@ Server Epoll::creat_serve(std::vector<std::string> vec, size_t &i, Server serve)
 				i++;
 			}
 		}
-		while (is_empty(vec[i]))
+		while (i < vec.size() && is_empty(vec[i]))
 		{
 			i++;
 		}

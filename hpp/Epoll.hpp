@@ -61,6 +61,7 @@ class Epoll {
         // CGI : associe un pipe_out fd à son client fd et à son index de serveur.
         std::map<int, int>    _pipe_to_client;  // pipe_out fd → client fd
         std::map<int, size_t> _pipe_to_server;  // pipe_out fd → index dans _servers
+        std::map<int, pid_t>  _pipe_to_pid;     // pipe_out fd → pid du processus CGI
 
         // Supprime proprement un client : epoll_ctl DEL + close + remove_client.
         void cleanup_client(size_t server_idx, int client_fd);

@@ -51,10 +51,17 @@ public:
     // Ex : "session_id=abc123; foo=bar" → "abc123"
     static std::string extract_from_cookie(const std::string &cookie_header);
 
+    // Supprime les sessions expirées (inactives depuis plus de SESSION_TTL secondes).
+    void cleanup_expired();
+
 private:
     SessionManager();
 
     std::string generate_id() const;
 
     std::map<std::string, SessionData> _sessions;
+
+    // Durée de vie d'une session inactive (30 min). Limite max : 10 000 sessions.
+    static const int SESSION_TTL    = 1800;
+    static const int SESSION_MAX    = 10000;
 };

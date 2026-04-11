@@ -392,8 +392,9 @@ int Client::start_cgi(Server &server, const std::string &interpreter) {
     // Le pipe_in est bloquant côté parent (seul pipe_out est mis en O_NONBLOCK).
     // On écrit en boucle pour gérer les écritures partielles.
     if (_request.get_method() == "POST" && !_request.get_body().empty()) {
-        const char *buf = _request.get_body().c_str();
-        size_t      len = _request.get_body().size();
+        std::string body_copy = _request.get_body(); // évite le use-after-free sur le temporaire
+        const char *buf = body_copy.c_str();
+        size_t      len = body_copy.size();
         size_t      written = 0;
         while (written < len) {
             int n = write(pipe_in[1], buf + written, len - written);

@@ -204,6 +204,7 @@ int Epoll::handle_client_event(int client_fd, uint32_t events) {
             _nb_sockets++;
             _pipe_to_client[pipe_fd] = client_fd;
             _pipe_to_server[pipe_fd] = i;
+            _pipe_to_pid[pipe_fd]    = client.get_cgi_pid();
         } else if (client.get_state() == DONE || result == -1) {
             cleanup_client(i, client_fd);
         } else if (client.get_state() == SENDING) {
@@ -229,6 +230,22 @@ void Epoll::handle_cgi_pipe_event(int pipe_fd, uint32_t events) {
 
     int    client_fd  = cit->second;
     size_t server_idx = sit->second;
+
+    // Le client peut s'être déconnecté pendant que le CGI tournait.
+    // Dans ce cas, on tue le processus et on nettoie sans toucher au client.
+    if (!_servers[server_idx].has_client(client_fd)) {
+        pid_t pid = _pipe_to_pid[pipe_fd];
+        kill(pid, SIGKILL);
+        waitpid(pid, NULL, 0);
+        epoll_ctl(_epoll_g, EPOLL_CTL_DEL, pipe_fd, NULL);
+        close(pipe_fd);
+        _nb_sockets--;
+        _pipe_to_client.erase(pipe_fd);
+        _pipe_to_server.erase(pipe_fd);
+        _pipe_to_pid.erase(pipe_fd);
+        return;
+    }
+
     Client &client    = _servers[server_idx].get_client(client_fd);
 
     bool cgi_done  = false;
@@ -258,6 +275,7 @@ void Epoll::handle_cgi_pipe_event(int pipe_fd, uint32_t events) {
         _nb_sockets--;
         _pipe_to_client.erase(pipe_fd);
         _pipe_to_server.erase(pipe_fd);
+        _pipe_to_pid.erase(pipe_fd);
 
         // Construire + envoyer la réponse HTTP
         int send_result = client.finish_cgi(_servers[server_idx], timed_out);
@@ -357,14 +375,21 @@ int Epoll::init_epoll_servers() {
             check_cgi_timeouts();
     }
 
-    // Fermer les pipes CGI encore ouverts
+    // Fermer les pipes CGI encore ouverts et tuer les processus CGI en cours
     for (std::map<int, int>::iterator it = _pipe_to_client.begin();
          it != _pipe_to_client.end(); ++it) {
-        epoll_ctl(_epoll_g, EPOLL_CTL_DEL, it->first, NULL);
-        close(it->first);
+        int pipe_fd = it->first;
+        std::map<int, pid_t>::iterator pit = _pipe_to_pid.find(pipe_fd);
+        if (pit != _pipe_to_pid.end()) {
+            kill(pit->second, SIGKILL);
+            waitpid(pit->second, NULL, 0);
+        }
+        epoll_ctl(_epoll_g, EPOLL_CTL_DEL, pipe_fd, NULL);
+        close(pipe_fd);
     }
     _pipe_to_client.clear();
     _pipe_to_server.clear();
+    _pipe_to_pid.clear();
 
     // Fermer les fds clients encore connectés
     for (std::vector<Server>::iterator sit = _servers.begin();

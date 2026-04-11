@@ -53,6 +53,9 @@ class Client {
         // Retourne le fd du pipe de sortie CGI (valide uniquement si CGI_RUNNING).
         int get_cgi_pipe() const      { return _cgi_pipe_out; }
 
+        // Retourne le pid du processus CGI (valide uniquement si CGI_RUNNING).
+        pid_t get_cgi_pid() const     { return _cgi_pid; }
+
         // Retourne le timestamp de démarrage du CGI (pour le timeout).
         time_t get_cgi_start() const  { return _cgi_start_time; }
 
