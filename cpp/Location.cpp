@@ -18,15 +18,16 @@ Location::Location(const Location &location) {
 
 Location &Location::operator=(const Location &location) {
     if (this != &location) {
-        this->_root = location._root;
-        this->_index = location._index;
-        this->_allowed_methods = location._allowed_methods;
-        this->_auto_index = location._auto_index;
-        this->_cgi = location._cgi;
-        this->_error_pages = location._error_pages;
-        this->_upload_folder = location._upload_folder;
-        this->_redirect = location._redirect;
-        this->_is_good = location._is_good;
+        _path            = location._path;
+        _root            = location._root;
+        _index           = location._index;
+        _allowed_methods = location._allowed_methods;
+        _auto_index      = location._auto_index;
+        _cgi             = location._cgi;
+        _error_pages     = location._error_pages;
+        _upload_folder   = location._upload_folder;
+        _redirect        = location._redirect;
+        _is_good         = location._is_good;
     }
     return *this;
 }

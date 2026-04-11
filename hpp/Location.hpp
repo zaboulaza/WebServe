@@ -1,4 +1,4 @@
- /* ************************************************************************** */
+/* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
 /*   Location.hpp                                       :+:      :+:    :+:   */
@@ -6,7 +6,7 @@
 /*   By: zaboulaza <zaboulaza@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/04 16:41:52 by zaboulaza         #+#    #+#             */
-/*   Updated: 2026/02/05 04:10:44 by zaboulaza        ###   ########.fr       */
+/*   Updated: 2026/04/11 00:00:00 by zaboulaza        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,51 +15,55 @@
 #include "Client.hpp"
 
 class Location {
-    
+
     public:
-    
-        Location() {};
-        ~Location() {};
-        Location(const Location &Location);
-        Location &operator=(const Location &Location);
-            
-        void set_is_good(bool is_good) { _is_good = is_good; };
-        bool get_is_good() { return _is_good; };
 
-        void set_root(std::string root) { _root = root; };
-        std::string get_root() { return _root; };
+        Location() : _auto_index(false), _is_good(false) {}
+        ~Location() {}
+        Location(const Location &loc);
+        Location &operator=(const Location &loc);
 
-        void set_index(std::string index) { _index = index; };
-        std::string get_index() { return _index; };
+        void set_is_good(bool v)                              { _is_good = v; }
+        bool get_is_good() const                              { return _is_good; }
 
-        void set_allowed_methods(std::set<std::string> allowed_methods) { _allowed_methods = allowed_methods; };
-        std::set<std::string> get_allowed_methods() { return _allowed_methods; };
+        // Préfixe URL de ce bloc location (ex: "/uploads")
+        void set_path(const std::string &path)                { _path = path; }
+        std::string get_path() const                          { return _path; }
 
-        void set_auto_index(bool auto_index) { _auto_index = auto_index; };
-        bool get_auto_index() { return _auto_index; };
+        void set_root(const std::string &root)                { _root = root; }
+        std::string get_root() const                          { return _root; }
 
-        void set_cgi(std::map<std::string, std::string> cgi) { _cgi = cgi; };
-        std::map<std::string, std::string> get_cgi() { return _cgi; };
+        void set_index(const std::string &index)              { _index = index; }
+        std::string get_index() const                         { return _index; }
 
-        void set_error_pages(std::map<int, std::string> error_pages) { _error_pages = error_pages; };
-        std::map<int, std::string> get_error_pages() { return _error_pages; };
+        void set_allowed_methods(std::set<std::string> m)     { _allowed_methods = m; }
+        std::set<std::string> get_allowed_methods() const     { return _allowed_methods; }
 
-        void set_upload_folder(std::string upload_folder) { _upload_folder = upload_folder; };
-        std::string get_upload_folder() { return _upload_folder; };
-        
-        void set_redirect(std::string redirect) { _redirect = redirect; };
-        std::string get_redirect() { return _redirect; };
-        
-        
+        void set_auto_index(bool v)                           { _auto_index = v; }
+        bool get_auto_index() const                           { return _auto_index; }
+
+        void set_cgi(std::map<std::string, std::string> cgi)  { _cgi = cgi; }
+        std::map<std::string, std::string> get_cgi() const    { return _cgi; }
+
+        void set_error_pages(std::map<int, std::string> ep)   { _error_pages = ep; }
+        std::map<int, std::string> get_error_pages() const    { return _error_pages; }
+
+        void set_upload_folder(const std::string &uf)         { _upload_folder = uf; }
+        std::string get_upload_folder() const                 { return _upload_folder; }
+
+        void set_redirect(const std::string &r)               { _redirect = r; }
+        std::string get_redirect() const                      { return _redirect; }
+
     private:
-    
-        std::string _root;                            // Dossier racine des fichiers
-        std::string _index;                           // Fichier index par défaut (index.html)
-        std::set<std::string> _allowed_methods;      // Méthodes HTTP autorisées (GET, POST, DELETE…)
-        bool _auto_index;                             // Active l'affichage du listing des dossiers
-        std::map<std::string, std::string> _cgi;     // Extension → chemin du binaire CGI (.py, .php…)
-        std::map<int, std::string> _error_pages;     // Code HTTP → chemin de la page d’erreur personnalisée
-        std::string _upload_folder;
-        std::string _redirect;
-        bool _is_good;
+
+        std::string                      _path;            // préfixe URL (ex: "/uploads")
+        std::string                      _root;
+        std::string                      _index;
+        std::set<std::string>            _allowed_methods;
+        bool                             _auto_index;
+        std::map<std::string, std::string> _cgi;
+        std::map<int, std::string>       _error_pages;
+        std::string                      _upload_folder;
+        std::string                      _redirect;
+        bool                             _is_good;
 };

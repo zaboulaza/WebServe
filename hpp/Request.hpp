@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: zaboulaza <zaboulaza@student.42.fr>        +#+  +:+       +#+        */
+/*   By: lenakach <lenakach@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/15 00:55:12 by zaboulaza         #+#    #+#             */
-/*   Updated: 2026/03/03 13:08:30 by zaboulaza        ###   ########.fr       */
+/*   Updated: 2026/04/08 21:33:31 by lenakach         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,9 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <sys/epoll.h>
+#include <sys/wait.h>
 #include <cerrno>
+#include <string>
 #include <fstream>
 #include <map>
 #include <set>
@@ -51,7 +53,9 @@ class Request {
         bool set_first_line(std::string str);
         std::string trim(std::string str);
         bool pars_head(std::string str);
-        int validate_header(std::set<std::string> allowed_methods);
+        // max_body_size : client_max_body_size du serveur (défaut 10 Mo)
+        int validate_header(std::set<std::string> allowed_methods,
+                            size_t max_body_size = 10 * 1024 * 1024);
 
         std::string get_method() const { return _method; }
         int get_content_length() const { return _content_length; }
@@ -59,8 +63,16 @@ class Request {
         void set_body(std::string body) { _body = body; }
         std::string get_version() const {return _version;};
 
-        std::string get_path() const { return _path; };
-        std::string get_body() const { return _body; };
+        std::string get_path() const { return _path; }
+        std::string get_body() const { return _body; }
+
+        // Retourne la valeur d'un en-tête (ex: "Host", "Cookie").
+        // Retourne "" si l'en-tête n'existe pas. Utile pour les bonus (cookies).
+        std::string get_header(const std::string &key) const {
+            std::map<std::string, std::string>::const_iterator it = _header.find(key);
+            if (it != _header.end()) return it->second;
+            return "";
+        }
 
     private:
 
