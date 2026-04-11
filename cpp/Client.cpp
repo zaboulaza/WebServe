@@ -351,7 +351,8 @@ int Client::read_cgi_chunk() {
 // Retourne le même code que do_send() : -1=envoyé/erreur, 1=envoi partiel (EPOLLOUT).
 int Client::finish_cgi(Server &server, bool killed) {
     if (killed) {
-        // Le processus a déjà été tué par Epoll avant cet appel
+        // Tuer le processus CGI puis ramasser le zombie
+        kill(_cgi_pid, SIGKILL);
         waitpid(_cgi_pid, NULL, 0);
         _cgi_pid      = -1;
         _cgi_pipe_out = -1;

@@ -73,6 +73,8 @@ class Server {
         std::vector<Location> &get_locations()                  { return _locations; }
         void set_locations(const std::vector<Location> &locs)   { _locations = locs; }
 
+        std::map<int, Client> &get_clients()                    { return _clients_map; }
+
     private:
 
         std::map<int, Client>            _clients_map;

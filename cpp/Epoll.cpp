@@ -13,6 +13,12 @@
 #include "../hpp/Epoll.hpp"
 #include <csignal>
 
+static volatile sig_atomic_t g_running = 1;
+
+static void signal_handler(int) {
+    g_running = 0;
+}
+
 Epoll::Epoll(const Epoll &epoll) {
     *this = epoll;
 }
@@ -239,8 +245,8 @@ void Epoll::handle_cgi_pipe_event(int pipe_fd, uint32_t events) {
             cgi_done = true;
     }
 
-    // Vérification du timeout CGI
-    if (!cgi_done && difftime(time(NULL), client.get_cgi_start()) > CGI_TIMEOUT) {
+    // Vérification du timeout CGI (prioritaire sur l'état cgi_done)
+    if (difftime(time(NULL), client.get_cgi_start()) > CGI_TIMEOUT) {
         cgi_done  = true;
         timed_out = true;
     }
@@ -290,6 +296,9 @@ void Epoll::check_cgi_timeouts() {
 }
 
 int Epoll::init_epoll_servers() {
+    signal(SIGINT,  signal_handler);
+    signal(SIGTERM, signal_handler);
+
     for (std::vector<Server>::iterator it = _servers.begin(); it != _servers.end();) {
         if (create_and_bind_socket(*it) == -1) {
             it = _servers.erase(it);
@@ -302,12 +311,13 @@ int Epoll::init_epoll_servers() {
         return -1;
 
     struct epoll_event events[MAXEPOLLSIZE];
-    while (1) {
+    while (g_running) {
         // Timeout de 5 s pour vérifier les CGI en cours
         int nb_events = epoll_wait(_epoll_g, events, MAXEPOLLSIZE,
                                    _pipe_to_client.empty() ? -1 : 5000);
         if (nb_events == -1) {
-            if (errno == EINTR) continue; // signal interrompu, on réessaie
+            if (errno == EINTR && !g_running) break; // arrêt demandé
+            if (errno == EINTR) continue;
             std::cerr << "epoll_wait: " << strerror(errno) << std::endl;
             return -1;
         }
@@ -346,10 +356,28 @@ int Epoll::init_epoll_servers() {
             check_cgi_timeouts();
     }
 
-    for (std::vector<Server>::iterator it = _servers.begin();
-         it != _servers.end(); ++it) {
-        close(it->get_socketfd());
+    // Fermer les pipes CGI encore ouverts
+    for (std::map<int, int>::iterator it = _pipe_to_client.begin();
+         it != _pipe_to_client.end(); ++it) {
+        epoll_ctl(_epoll_g, EPOLL_CTL_DEL, it->first, NULL);
+        close(it->first);
     }
+    _pipe_to_client.clear();
+    _pipe_to_server.clear();
+
+    // Fermer les fds clients encore connectés
+    for (std::vector<Server>::iterator sit = _servers.begin();
+         sit != _servers.end(); ++sit) {
+        std::map<int, Client> &clients = sit->get_clients();
+        for (std::map<int, Client>::iterator cit = clients.begin();
+             cit != clients.end(); ++cit) {
+            epoll_ctl(_epoll_g, EPOLL_CTL_DEL, cit->first, NULL);
+            close(cit->first);
+        }
+        clients.clear();
+        close(sit->get_socketfd());
+    }
+
     close(_epoll_g);
     return 1;
 }
