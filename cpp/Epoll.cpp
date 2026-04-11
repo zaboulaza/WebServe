@@ -298,6 +298,7 @@ void Epoll::check_cgi_timeouts() {
 int Epoll::init_epoll_servers() {
     signal(SIGINT,  signal_handler);
     signal(SIGTERM, signal_handler);
+    signal(SIGPIPE, SIG_IGN); // évite que l'écriture dans un pipe fermé tue le serveur
 
     for (std::vector<Server>::iterator it = _servers.begin(); it != _servers.end();) {
         if (create_and_bind_socket(*it) == -1) {

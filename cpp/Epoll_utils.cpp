@@ -264,13 +264,14 @@ void Epoll::set_values_location(Location &loc, std::vector<std::string> line)
 	}
 	else if (line[0] == "cgi")
 	{
-		if (line.size() != 3)
+		if (line.size() != 3 || line[1].size() < 2 || line[1][0] != '.')
 		{
 			loc.set_is_good(false);
 			loc = Location();
 			return ;
 		}
-		std::map<std::string, std::string> cgi_map;
+		// Fusion avec les CGI déjà enregistrés (corrige l'écrasement)
+		std::map<std::string, std::string> cgi_map = loc.get_cgi();
 		cgi_map[line[1]] = line[2];
 		loc.set_cgi(cgi_map);
 	}

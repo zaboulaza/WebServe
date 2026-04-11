@@ -12,9 +12,11 @@
 
 #include "../hpp/Client.hpp"
 #include "../hpp/Server.hpp"
+#include "../hpp/Session.hpp"
 
 #include <fcntl.h>
 #include <unistd.h>
+#include <sys/stat.h>
 #include <cerrno>
 #include <cstring>
 #include <csignal>
@@ -25,11 +27,13 @@
 
 Client::Client()
     : _socket_fd(-1), _state(READING_HEADER), _send_offset(0),
-      _cgi_pid(-1), _cgi_pipe_out(-1), _cgi_start_time(0) {}
+      _cgi_pid(-1), _cgi_pipe_out(-1), _cgi_start_time(0),
+      _new_session(false) {}
 
 Client::Client(int fd)
     : _socket_fd(fd), _state(READING_HEADER), _send_offset(0),
-      _cgi_pid(-1), _cgi_pipe_out(-1), _cgi_start_time(0) {}
+      _cgi_pid(-1), _cgi_pipe_out(-1), _cgi_start_time(0),
+      _new_session(false) {}
 
 Client::Client(const Client &c) {
     *this = c;
@@ -47,6 +51,8 @@ Client &Client::operator=(const Client &c) {
         _cgi_pipe_out   = c._cgi_pipe_out;
         _cgi_output     = c._cgi_output;
         _cgi_start_time = c._cgi_start_time;
+        _session_id     = c._session_id;
+        _new_session    = c._new_session;
     }
     return *this;
 }
@@ -92,8 +98,23 @@ int Client::read_header(Server &server) {
     _raw_buffer.append(tmp, bytes);
 
     size_t pos = _raw_buffer.find("\r\n\r\n");
-    if (pos == std::string::npos)
+
+    // Header incomplet : vérifier la limite de taille avant de continuer
+    if (pos == std::string::npos) {
+        if (_raw_buffer.size() > 8192) {
+            Response resp;
+            prepare_send(resp.build_error_response(431, server));
+            return do_send();
+        }
         return 0; // header incomplet, on attend le prochain événement epoll
+    }
+
+    // Header complet : vérifier que la partie header ne dépasse pas 8 Ko
+    if (pos > 8192) {
+        Response resp;
+        prepare_send(resp.build_error_response(431, server));
+        return do_send();
+    }
 
     // Header complet : on sépare header et début du corps éventuel
     std::string header = _raw_buffer.substr(0, pos + 4);
@@ -121,6 +142,14 @@ int Client::read_header(Server &server) {
         return do_send();
     }
 
+    // ── Gestion des sessions (bonus) — avant tout branchement CGI/body ────────
+    {
+        std::string cookie = _request.get_header("Cookie");
+        std::string sid    = SessionManager::extract_from_cookie(cookie);
+        _session_id = SessionManager::instance().get_or_create(sid, _new_session);
+        SessionManager::instance().touch(_session_id);
+    }
+
     // Si POST avec corps, on passe en lecture du corps
     if (_request.get_method() == "POST" && _request.get_content_length() > 0) {
         _state = READING_BODY;
@@ -130,6 +159,18 @@ int Client::read_header(Server &server) {
     // Vérifier si c'est une requête CGI (GET ou DELETE sur un script)
     std::string interpreter = Response::get_cgi_interpreter(_request, loc, server);
     if (!interpreter.empty()) {
+        // Vérifier que le script existe avant de forker
+        std::string cgi_root = server.get_root();
+        if (loc && !loc->get_root().empty()) cgi_root = loc->get_root();
+        std::string url_cgi = _request.get_path();
+        size_t qp = url_cgi.find('?');
+        if (qp != std::string::npos) url_cgi = url_cgi.substr(0, qp);
+        struct stat cgi_st;
+        if (stat((cgi_root + url_cgi).c_str(), &cgi_st) != 0) {
+            Response resp;
+            prepare_send(resp.build_error_response(404, server));
+            return do_send();
+        }
         int pipe_fd = start_cgi(server, interpreter);
         if (pipe_fd < 0) {
             Response resp;
@@ -142,6 +183,8 @@ int Client::read_header(Server &server) {
 
     // Sinon, on construit directement la réponse
     Response resp;
+    if (_new_session)
+        resp.add_header("Set-Cookie", "session_id=" + _session_id + "; Path=/; HttpOnly");
     prepare_send(resp.build_response(server, _request));
     return do_send();
 }
@@ -182,6 +225,18 @@ int Client::read_body(Server &server) {
     Location *loc = server.find_location(_request.get_path());
     std::string interpreter = Response::get_cgi_interpreter(_request, loc, server);
     if (!interpreter.empty()) {
+        // Vérifier que le script existe avant de forker
+        std::string cgi_root2 = server.get_root();
+        if (loc && !loc->get_root().empty()) cgi_root2 = loc->get_root();
+        std::string url_cgi2 = _request.get_path();
+        size_t qp2 = url_cgi2.find('?');
+        if (qp2 != std::string::npos) url_cgi2 = url_cgi2.substr(0, qp2);
+        struct stat cgi_st2;
+        if (stat((cgi_root2 + url_cgi2).c_str(), &cgi_st2) != 0) {
+            Response resp;
+            prepare_send(resp.build_error_response(404, server));
+            return do_send();
+        }
         int pipe_fd = start_cgi(server, interpreter);
         if (pipe_fd < 0) {
             Response resp;
@@ -193,6 +248,8 @@ int Client::read_body(Server &server) {
     }
 
     Response resp;
+    if (_new_session)
+        resp.add_header("Set-Cookie", "session_id=" + _session_id + "; Path=/; HttpOnly");
     prepare_send(resp.build_response(server, _request));
     return do_send();
 }
@@ -227,8 +284,17 @@ int Client::start_cgi(Server &server, const std::string &interpreter) {
 
     int pipe_in[2];
     int pipe_out[2];
-    if (pipe(pipe_in) == -1 || pipe(pipe_out) == -1)
+    pipe_in[0] = pipe_in[1] = -1;
+    pipe_out[0] = pipe_out[1] = -1;
+
+    if (pipe(pipe_in) == -1) return -1;
+    if (pipe(pipe_out) == -1) {
+        close(pipe_in[0]); close(pipe_in[1]);
         return -1;
+    }
+
+    // pipe_in[1] en non-bloquant : évite de bloquer l'event loop si le buffer pipe est plein
+    fcntl(pipe_in[1], F_SETFL, O_NONBLOCK);
 
     pid_t pid = fork();
     if (pid < 0) {
@@ -283,6 +349,22 @@ int Client::start_cgi(Server &server, const std::string &interpreter) {
             env_vars.push_back("CONTENT_TYPE=" + ct);
         }
 
+        // Bonus : cookie et session
+        std::string cookie = _request.get_header("Cookie");
+        if (!cookie.empty())
+            env_vars.push_back("HTTP_COOKIE=" + cookie);
+        if (!_session_id.empty()) {
+            env_vars.push_back("SESSION_ID=" + _session_id);
+            SessionData *sd = SessionManager::instance().get(_session_id);
+            if (sd) {
+                std::ostringstream vc;
+                vc << sd->visit_count;
+                env_vars.push_back("SESSION_COUNT=" + vc.str());
+                if (!sd->username.empty())
+                    env_vars.push_back("SESSION_USERNAME=" + sd->username);
+            }
+        }
+
         // Convertir en tableau char* pour execve
         std::vector<char *> env;
         for (size_t i = 0; i < env_vars.size(); i++)
@@ -307,8 +389,24 @@ int Client::start_cgi(Server &server, const std::string &interpreter) {
     close(pipe_out[1]);
 
     // Envoyer le corps de la requête au CGI (POST)
+    // Le pipe_in est bloquant côté parent (seul pipe_out est mis en O_NONBLOCK).
+    // On écrit en boucle pour gérer les écritures partielles.
     if (_request.get_method() == "POST" && !_request.get_body().empty()) {
-        write(pipe_in[1], _request.get_body().c_str(), _request.get_body().size());
+        const char *buf = _request.get_body().c_str();
+        size_t      len = _request.get_body().size();
+        size_t      written = 0;
+        while (written < len) {
+            int n = write(pipe_in[1], buf + written, len - written);
+            if (n > 0) {
+                written += (size_t)n;
+            } else if (n == 0) {
+                break; // pipe fermé
+            } else {
+                if (errno == EAGAIN || errno == EWOULDBLOCK)
+                    break; // buffer plein, on abandonne le reste (CGI doit lire plus vite)
+                break; // erreur réelle
+            }
+        }
     }
     close(pipe_in[1]);
 
@@ -376,6 +474,8 @@ int Client::finish_cgi(Server &server, bool killed) {
 
     // Encapsuler la sortie CGI dans une réponse HTTP
     Response resp;
+    if (_new_session)
+        resp.add_header("Set-Cookie", "session_id=" + _session_id + "; Path=/; HttpOnly");
     prepare_send(resp.finish_cgi_response(_cgi_output, server));
     return do_send();
 }

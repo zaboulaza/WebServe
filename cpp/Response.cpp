@@ -13,6 +13,7 @@
 #include "../hpp/Response.hpp"
 #include "../hpp/Server.hpp"
 #include "../hpp/Location.hpp"
+#include "../hpp/Session.hpp"
 
 #include <dirent.h>
 #include <sys/stat.h>
@@ -107,6 +108,7 @@ std::string Response::build_error_response(int code, Server &server) {
     else if (code == 413) msg = "413 Payload Too Large";
     else if (code == 500) msg = "500 Internal Server Error";
     else if (code == 502) msg = "502 Bad Gateway";
+    else if (code == 431) msg = "431 Request Header Fields Too Large";
     else if (code == 504) msg = "504 Gateway Timeout";
     else {
         std::ostringstream oss;
@@ -249,6 +251,9 @@ std::string Response::finish_cgi_response(const std::string &output, Server &ser
         oss << cgi_headers << "\r\n";
         oss << "Content-Length: " << body.size() << "\r\n";
         oss << "Connection: close\r\n";
+        for (std::map<std::string, std::string>::const_iterator it = _extra_headers.begin();
+             it != _extra_headers.end(); ++it)
+            oss << it->first << ": " << it->second << "\r\n";
         oss << "\r\n";
         oss << body;
         return oss.str();
@@ -302,6 +307,40 @@ std::string Response::build_GET_response(const std::string &root,
         return build_error_response(403, server);
     }
 
+    // Page spéciale /session : démontre la gestion de sessions (bonus)
+    if (url_path == "/session") {
+        std::string cookie  = request.get_header("Cookie");
+        std::string sid     = SessionManager::extract_from_cookie(cookie);
+        SessionData *sd     = sid.empty() ? NULL : SessionManager::instance().get(sid);
+
+        std::ostringstream body;
+        body << "<!DOCTYPE html><html><head><title>Session Info</title>"
+             << "<style>body{font-family:monospace;padding:20px;}"
+             << "table{border-collapse:collapse;} td,th{border:1px solid #ccc;padding:8px;}"
+             << "</style></head><body>"
+             << "<h1>Session Manager — Bonus Webserv</h1>";
+
+        if (!sd) {
+            body << "<p style='color:red'>Aucune session active. "
+                 << "Rechargez la page pour en créer une.</p>";
+        } else {
+            body << "<table>"
+                 << "<tr><th>Clé</th><th>Valeur</th></tr>"
+                 << "<tr><td>session_id</td><td>" << sid << "</td></tr>"
+                 << "<tr><td>visit_count</td><td>" << sd->visit_count << "</td></tr>"
+                 << "<tr><td>username</td><td>"
+                 << (sd->username.empty() ? "(non défini)" : sd->username)
+                 << "</td></tr>"
+                 << "</table>";
+        }
+        body << "<p><a href='/session'>Recharger</a> | "
+             << "<a href='/'>Accueil</a></p>"
+             << "</body></html>";
+
+        std::string b = body.str();
+        return build_headers("200 OK", "text/html", b.size()) + b;
+    }
+
     // Cas classique : servir le fichier
     if (url_path == "/")
         fs_path = root + "/" + index;
@@ -320,8 +359,9 @@ std::string Response::build_GET_response(const std::string &root,
 std::string Response::build_POST_response(const std::string &upload_folder,
                                            Server &server,
                                            Request &request) {
-    // Créer le dossier d'upload s'il n'existe pas
-    mkdir(upload_folder.c_str(), 0755);
+    // Vérifier que le dossier d'upload existe (access est dans la liste des fonctions autorisées)
+    if (access(upload_folder.c_str(), W_OK) != 0)
+        return build_error_response(500, server);
 
     time_t ts = time(NULL);
     std::ostringstream ss;

@@ -84,6 +84,10 @@ class Client {
         std::string _cgi_output;
         time_t      _cgi_start_time;
 
+        // Session courante (gérée côté serveur via SessionManager)
+        std::string _session_id;
+        bool        _new_session;
+
         // Lit les octets du header, parse et valide dès que \r\n\r\n est reçu.
         // Retourne : -1=fin, 0=attendre plus de données, 2=CGI démarré
         int read_header(Server &server);
