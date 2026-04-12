@@ -10,6 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
+#include "hpp/Config.hpp"
 #include "hpp/Epoll.hpp"
 
 int main(int ac, char **av){
@@ -18,15 +19,18 @@ int main(int ac, char **av){
         std::cerr << "Error : need more arguments" << std::endl;
         return (0);
     }
-    Epoll epoll;
 
-    if (epoll.set_ports(av, ac) == -1){ 
+    Config config;
+    if (config.parse(av, ac) == -1){
         std::cerr << "Error : set ports" << std::endl;
         return (0);
     }
+
+    Epoll epoll;
+    epoll.set_servers(config.get_servers());
     if (epoll.init_epoll_servers() == -1){
         return (0);
     }
-    
+
     return (1);
 }

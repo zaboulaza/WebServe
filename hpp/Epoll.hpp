@@ -25,6 +25,9 @@ class Epoll {
         Epoll(const Epoll &epoll);
         Epoll &operator=(const Epoll &epoll);
 
+        // Injecte les serveurs déjà parsés (appelé depuis main après Config::parse).
+        void set_servers(const std::vector<Server> &servers) { _servers = servers; }
+
         int init_epoll_servers();
         int create_and_bind_socket(Server &server);
         int set_non_blocking(int socket_fd);
@@ -39,18 +42,6 @@ class Epoll {
 
         // Vérifie les CGI en timeout et les tue.
         void check_cgi_timeouts();
-
-        int set_ports(char **av, int ac);
-        int is_number(char *av);
-        std::string trim(std::string str);
-        int is_empty(std::string str);
-        int is_word(std::string str);
-        int is_word2(std::string str);
-        void set_values_server(Server &serve, std::vector<std::string> line);
-        void set_values_location(Location &loc, std::vector<std::string> line);
-        std::vector<std::string> split(std::string str, char delimiter);
-        Server creat_serve(std::vector<std::string> vec, size_t &i, Server serve);
-        Location creat_location(std::vector<std::string> vec, size_t &i);
 
     private:
 

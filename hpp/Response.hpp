@@ -17,9 +17,6 @@
 class Server;
 class Location;
 
-// La classe Response construit la réponse HTTP sous forme de std::string.
-// Elle n'appelle jamais send() directement — c'est le Client qui envoie.
-// Les _extra_headers permettent d'ajouter des en-têtes custom (ex: Set-Cookie pour les bonus).
 class Response {
 
     public:
@@ -29,30 +26,26 @@ class Response {
         Response(const Response &r);
         Response &operator=(const Response &r);
 
-        // Point d'entrée principal : retourne la réponse HTTP complète sous forme de string.
-        // Note : ne gère plus le CGI directement (Client intercepte avant d'appeler ici).
+        // construit la reponse HTTP complete (pour les requetes non-CGI)
         std::string build_response(Server &server, Request &request);
 
-        // Construit une réponse d'erreur HTTP (400, 404, 405…).
-        // Vérifie si le serveur a une page d'erreur personnalisée dans sa config.
+        // page d'erreur : personnalisee si definie dans la config, sinon defaut
         std::string build_error_response(int code, Server &server);
 
-        // Bonus-ready : permet d'ajouter des en-têtes supplémentaires dans toutes les réponses.
-        // Exemple d'utilisation future : add_header("Set-Cookie", "session_id=abc; Path=/")
+        // ajoute un header custom (utilise pour Set-Cookie)
         void add_header(const std::string &key, const std::string &value);
 
-        // Cherche l'interpréteur CGI pour l'extension du fichier demandé.
-        // Méthode statique publique pour que Client.cpp puisse l'appeler sans instancier Response.
+        // cherche l'interpreteur CGI pour l'extension du fichier demande
         static std::string get_cgi_interpreter(const Request &request,
                                                 const Location *loc,
                                                 const Server &server);
 
-        // Encapsule la sortie brute du CGI (collectée via epoll) dans une réponse HTTP complète.
+        // encapsule la sortie brute du CGI dans une reponse HTTP
         std::string finish_cgi_response(const std::string &cgi_output, Server &server);
 
     private:
 
-        // En-têtes supplémentaires injectés dans toutes les réponses (prévu pour les bonus).
+        // headers injectes dans toutes les reponses (Set-Cookie, etc.)
         std::map<std::string, std::string> _extra_headers;
 
         std::string build_GET_response(const std::string &root,

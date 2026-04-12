@@ -23,7 +23,6 @@
 #include <vector>
 #include <sstream>
 
-// ─── Constructeurs ────────────────────────────────────────────────────────────
 
 Client::Client()
     : _socket_fd(-1), _state(READING_HEADER), _send_offset(0),
@@ -57,7 +56,6 @@ Client &Client::operator=(const Client &c) {
     return *this;
 }
 
-// ─── Machine à états ─────────────────────────────────────────────────────────
 
 // Point d'entrée appelé par Epoll à chaque événement sur ce fd.
 // Retourne : -1=terminé/erreur, 0=continuer EPOLLIN, 1=besoin EPOLLOUT, 2=CGI démarré
@@ -76,7 +74,6 @@ int Client::handle_event(Server &server, uint32_t events) {
     return 0;
 }
 
-// ─── Lecture du header ───────────────────────────────────────────────────────
 
 // Lit des octets dans _raw_buffer jusqu'à trouver \r\n\r\n.
 // Un seul recv() par événement epoll → jamais bloquant.
@@ -85,13 +82,7 @@ int Client::read_header(Server &server) {
     char tmp[8192];
     int bytes = recv(_socket_fd, tmp, sizeof(tmp), 0);
 
-    if (bytes < 0) {
-        if (errno == EAGAIN || errno == EWOULDBLOCK)
-            return 0; // pas encore de données, on attend
-        _state = DONE;
-        return -1;
-    }
-    if (bytes == 0) { // client déconnecté
+    if (bytes <= 0) { // erreur ou client déconnecté — epoll nous a réveillé donc on lit
         _state = DONE;
         return -1;
     }
@@ -142,7 +133,6 @@ int Client::read_header(Server &server) {
         return do_send();
     }
 
-    // ── Gestion des sessions (bonus) — avant tout branchement CGI/body ────────
     {
         std::string cookie = _request.get_header("Cookie");
         std::string sid    = SessionManager::extract_from_cookie(cookie);
@@ -156,30 +146,10 @@ int Client::read_header(Server &server) {
         return read_body(server); // traite les octets déjà reçus dans _raw_buffer
     }
 
-    // Vérifier si c'est une requête CGI (GET ou DELETE sur un script)
-    std::string interpreter = Response::get_cgi_interpreter(_request, loc, server);
-    if (!interpreter.empty()) {
-        // Vérifier que le script existe avant de forker
-        std::string cgi_root = server.get_root();
-        if (loc && !loc->get_root().empty()) cgi_root = loc->get_root();
-        std::string url_cgi = _request.get_path();
-        size_t qp = url_cgi.find('?');
-        if (qp != std::string::npos) url_cgi = url_cgi.substr(0, qp);
-        struct stat cgi_st;
-        if (stat((cgi_root + url_cgi).c_str(), &cgi_st) != 0) {
-            Response resp;
-            prepare_send(resp.build_error_response(404, server));
-            return do_send();
-        }
-        int pipe_fd = start_cgi(server, interpreter);
-        if (pipe_fd < 0) {
-            Response resp;
-            prepare_send(resp.build_error_response(500, server));
-            return do_send();
-        }
-        _state = CGI_RUNNING;
-        return 2; // signaler à Epoll d'enregistrer le pipe CGI
-    }
+    // Requete CGI (GET/DELETE sur un script) ?
+    int cgi_code = try_cgi(server);
+    if (cgi_code != -2)
+        return cgi_code;
 
     // Sinon, on construit directement la réponse
     Response resp;
@@ -189,7 +159,6 @@ int Client::read_header(Server &server) {
     return do_send();
 }
 
-// ─── Lecture du corps (POST) ─────────────────────────────────────────────────
 
 // Accumule les octets jusqu'à atteindre Content-Length.
 // Un seul recv() par événement epoll.
@@ -201,13 +170,7 @@ int Client::read_body(Server &server) {
     if (_raw_buffer.size() < needed) {
         char tmp[8192];
         int bytes = recv(_socket_fd, tmp, sizeof(tmp), 0);
-        if (bytes < 0) {
-            if (errno == EAGAIN || errno == EWOULDBLOCK)
-                return 0; // pas encore de données
-            _state = DONE;
-            return -1;
-        }
-        if (bytes == 0) { // déconnexion avant la fin du corps
+        if (bytes <= 0) {
             _state = DONE;
             return -1;
         }
@@ -221,31 +184,10 @@ int Client::read_body(Server &server) {
     // Corps complet
     _request.set_body(_raw_buffer.substr(0, needed));
 
-    // Vérifier si c'est un POST CGI
-    Location *loc = server.find_location(_request.get_path());
-    std::string interpreter = Response::get_cgi_interpreter(_request, loc, server);
-    if (!interpreter.empty()) {
-        // Vérifier que le script existe avant de forker
-        std::string cgi_root2 = server.get_root();
-        if (loc && !loc->get_root().empty()) cgi_root2 = loc->get_root();
-        std::string url_cgi2 = _request.get_path();
-        size_t qp2 = url_cgi2.find('?');
-        if (qp2 != std::string::npos) url_cgi2 = url_cgi2.substr(0, qp2);
-        struct stat cgi_st2;
-        if (stat((cgi_root2 + url_cgi2).c_str(), &cgi_st2) != 0) {
-            Response resp;
-            prepare_send(resp.build_error_response(404, server));
-            return do_send();
-        }
-        int pipe_fd = start_cgi(server, interpreter);
-        if (pipe_fd < 0) {
-            Response resp;
-            prepare_send(resp.build_error_response(500, server));
-            return do_send();
-        }
-        _state = CGI_RUNNING;
-        return 2; // signaler à Epoll d'enregistrer le pipe CGI
-    }
+    // POST vers un script CGI ?
+    int cgi_code = try_cgi(server);
+    if (cgi_code != -2)
+        return cgi_code;
 
     Response resp;
     if (_new_session)
@@ -254,7 +196,38 @@ int Client::read_body(Server &server) {
     return do_send();
 }
 
-// ─── CGI : démarrage du processus ────────────────────────────────────────────
+// Facto de la detection + demarrage CGI partagee entre read_header et read_body.
+int Client::try_cgi(Server &server) {
+    Location *loc = server.find_location(_request.get_path());
+    std::string interpreter = Response::get_cgi_interpreter(_request, loc, server);
+    if (interpreter.empty())
+        return -2;
+
+    std::string cgi_root = server.get_root();
+    if (loc && !loc->get_root().empty())
+        cgi_root = loc->get_root();
+
+    // enlever la query string du path
+    std::string url_cgi = _request.get_path();
+    size_t qp = url_cgi.find('?');
+    if (qp != std::string::npos)
+        url_cgi = url_cgi.substr(0, qp);
+
+    struct stat cgi_st;
+    if (stat((cgi_root + url_cgi).c_str(), &cgi_st) != 0) {
+        Response resp;
+        prepare_send(resp.build_error_response(404, server));
+        return do_send();
+    }
+    if (start_cgi(server, interpreter) < 0) {
+        Response resp;
+        prepare_send(resp.build_error_response(500, server));
+        return do_send();
+    }
+    _state = CGI_RUNNING;
+    return 2;
+}
+
 
 // Fork + execve le script CGI.
 // - Écrit le corps POST dans pipe_in, puis ferme pipe_in.
@@ -304,7 +277,6 @@ int Client::start_cgi(Server &server, const std::string &interpreter) {
     }
 
     if (pid == 0) {
-        // ── Processus enfant (CGI) ──────────────────────────────────────
 
         // Rediriger stdin ← pipe_in, stdout → pipe_out
         dup2(pipe_in[0],  STDIN_FILENO);
@@ -383,7 +355,6 @@ int Client::start_cgi(Server &server, const std::string &interpreter) {
         exit(1); // execve a échoué
     }
 
-    // ── Processus parent ────────────────────────────────────────────────
 
     close(pipe_in[0]);
     close(pipe_out[1]);
@@ -398,15 +369,9 @@ int Client::start_cgi(Server &server, const std::string &interpreter) {
         size_t      written = 0;
         while (written < len) {
             int n = write(pipe_in[1], buf + written, len - written);
-            if (n > 0) {
-                written += (size_t)n;
-            } else if (n == 0) {
-                break; // pipe fermé
-            } else {
-                if (errno == EAGAIN || errno == EWOULDBLOCK)
-                    break; // buffer plein, on abandonne le reste (CGI doit lire plus vite)
-                break; // erreur réelle
-            }
+            if (n <= 0)
+                break; // pipe fermé / plein / erreur : on arrête là
+            written += (size_t)n;
         }
     }
     close(pipe_in[1]);
@@ -422,7 +387,6 @@ int Client::start_cgi(Server &server, const std::string &interpreter) {
     return pipe_out[0];
 }
 
-// ─── CGI : lecture d'un chunk depuis le pipe ─────────────────────────────────
 
 // Appelé par Epoll quand le pipe CGI est prêt en lecture.
 // Lit autant d'octets que disponibles et les ajoute à _cgi_output.
@@ -432,17 +396,11 @@ int Client::read_cgi_chunk() {
     int n = read(_cgi_pipe_out, buf, sizeof(buf));
     if (n > 0) {
         _cgi_output.append(buf, n);
-        return 0; // peut encore y avoir des données
+        return 0;
     }
-    if (n == 0)
-        return -1; // EOF : CGI a fermé son stdout
-    // n < 0
-    if (errno == EAGAIN || errno == EWOULDBLOCK)
-        return 0; // rien pour l'instant, on attend le prochain événement
-    return -1; // erreur réelle
+    return -1; // EOF ou erreur : CGI terminé côté stdout
 }
 
-// ─── CGI : finalisation ──────────────────────────────────────────────────────
 
 // Appelé par Epoll quand le pipe CGI a atteint EOF (ou timeout).
 // killed = true → le CGI a été tué pour timeout, on envoie un 504.
@@ -481,7 +439,6 @@ int Client::finish_cgi(Server &server, bool killed) {
     return do_send();
 }
 
-// ─── Envoi de la réponse ─────────────────────────────────────────────────────
 
 // Prépare _send_buffer pour l'envoi.
 void Client::prepare_send(const std::string &response) {
@@ -504,9 +461,7 @@ int Client::do_send() {
     int sent = send(_socket_fd,
                     _send_buffer.c_str() + _send_offset,
                     remaining, 0);
-    if (sent < 0) {
-        if (errno == EAGAIN || errno == EWOULDBLOCK)
-            return 1; // on ne peut pas encore écrire → EPOLLOUT
+    if (sent <= 0) {
         _state = DONE;
         return -1;
     }

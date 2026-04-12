@@ -23,36 +23,36 @@ class Location {
         Location(const Location &loc);
         Location &operator=(const Location &loc);
 
-        void set_is_good(bool v)                              { _is_good = v; }
-        bool get_is_good() const                              { return _is_good; }
+        void set_is_good(bool v) { _is_good = v; }
+        bool get_is_good() const { return _is_good; }
 
-        // Préfixe URL de ce bloc location (ex: "/uploads")
-        void set_path(const std::string &path)                { _path = path; }
-        std::string get_path() const                          { return _path; }
+        // prefixe URL du bloc location (ex: "/uploads")
+        void set_path(const std::string &path) { _path = path; }
+        std::string get_path() const { return _path; }
 
-        void set_root(const std::string &root)                { _root = root; }
-        std::string get_root() const                          { return _root; }
+        void set_root(const std::string &root) { _root = root; }
+        std::string get_root() const { return _root; }
 
-        void set_index(const std::string &index)              { _index = index; }
-        std::string get_index() const                         { return _index; }
+        void set_index(const std::string &index) { _index = index; }
+        std::string get_index() const { return _index; }
 
-        void set_allowed_methods(std::set<std::string> m)     { _allowed_methods = m; }
-        std::set<std::string> get_allowed_methods() const     { return _allowed_methods; }
+        void set_allowed_methods(std::set<std::string> m) { _allowed_methods = m; }
+        std::set<std::string> get_allowed_methods() const { return _allowed_methods; }
 
-        void set_auto_index(bool v)                           { _auto_index = v; }
-        bool get_auto_index() const                           { return _auto_index; }
+        void set_auto_index(bool v) { _auto_index = v; }
+        bool get_auto_index() const { return _auto_index; }
 
-        void set_cgi(std::map<std::string, std::string> cgi)  { _cgi = cgi; }
-        std::map<std::string, std::string> get_cgi() const    { return _cgi; }
+        void set_cgi(std::map<std::string, std::string> cgi) { _cgi = cgi; }
+        std::map<std::string, std::string> get_cgi() const { return _cgi; }
 
-        void set_error_pages(std::map<int, std::string> ep)   { _error_pages = ep; }
-        std::map<int, std::string> get_error_pages() const    { return _error_pages; }
+        void set_error_pages(std::map<int, std::string> ep) { _error_pages = ep; }
+        std::map<int, std::string> get_error_pages() const { return _error_pages; }
 
-        void set_upload_folder(const std::string &uf)         { _upload_folder = uf; }
-        std::string get_upload_folder() const                 { return _upload_folder; }
+        void set_upload_folder(const std::string &uf) { _upload_folder = uf; }
+        std::string get_upload_folder() const { return _upload_folder; }
 
-        void set_redirect(const std::string &r)               { _redirect = r; }
-        std::string get_redirect() const                      { return _redirect; }
+        void set_redirect(const std::string &r) { _redirect = r; }
+        std::string get_redirect() const { return _redirect; }
 
     private:
 

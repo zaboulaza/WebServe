@@ -1,19 +1,29 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   Epoll_utils.cpp                                    :+:      :+:    :+:   */
+/*   Config.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: lenakach <lenakach@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/03 17:53:10 by zaboulaza         #+#    #+#             */
-/*   Updated: 2026/04/08 17:22:05 by lenakach         ###   ########.fr       */
+/*   Updated: 2026/04/12 10:40:00 by lenakach         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../hpp/Epoll.hpp"
+#include "../hpp/Config.hpp"
+
+Config::Config(const Config &c) {
+	*this = c;
+}
+
+Config &Config::operator=(const Config &c) {
+	if (this != &c)
+		_servers = c._servers;
+	return *this;
+}
 
 // VU
-int Epoll::is_number(char *av)
+int Config::is_number(char *av)
 {
 	for (int i = 0; av[i]; i++)
 	{
@@ -24,7 +34,7 @@ int Epoll::is_number(char *av)
 }
 
 // VU
-int Epoll::is_empty(std::string str)
+int Config::is_empty(std::string str)
 {
 	if (str.empty())
 		return (1);
@@ -32,7 +42,7 @@ int Epoll::is_empty(std::string str)
 }
 
 // VU
-std::string Epoll::trim(std::string str)
+std::string Config::trim(std::string str)
 {
 	size_t	start;
 	size_t	end;
@@ -45,7 +55,7 @@ std::string Epoll::trim(std::string str)
 }
 
 // VU
-std::vector<std::string> Epoll::split(std::string str, char delimiter)
+std::vector<std::string> Config::split(std::string str, char delimiter)
 {
 	size_t	pos;
 
@@ -63,7 +73,7 @@ std::vector<std::string> Epoll::split(std::string str, char delimiter)
 }
 
 // VU
-int Epoll::is_word(std::string str)
+int Config::is_word(std::string str)
 {
 	std::vector<std::string> words;
 	words.push_back("listen");
@@ -86,7 +96,7 @@ int Epoll::is_word(std::string str)
 }
 
 // VU
-void Epoll::set_values_server(Server &serve, std::vector<std::string> line)
+void Config::set_values_server(Server &serve, std::vector<std::string> line)
 {
 	int	code;
 
@@ -196,7 +206,7 @@ void Epoll::set_values_server(Server &serve, std::vector<std::string> line)
 }
 
 // VU
-int Epoll::is_word2(std::string str)
+int Config::is_word2(std::string str)
 {
 	std::vector<std::string> words;
 	words.push_back("root");
@@ -216,7 +226,7 @@ int Epoll::is_word2(std::string str)
 }
 
 // VU
-void Epoll::set_values_location(Location &loc, std::vector<std::string> line)
+void Config::set_values_location(Location &loc, std::vector<std::string> line)
 {
 	int	code;
 
@@ -270,7 +280,7 @@ void Epoll::set_values_location(Location &loc, std::vector<std::string> line)
 			loc = Location();
 			return ;
 		}
-		// Fusion avec les CGI déjà enregistrés (corrige l'écrasement)
+		// fusion avec les CGI deja enregistrees (corrige l'ecrasement)
 		std::map<std::string, std::string> cgi_map = loc.get_cgi();
 		cgi_map[line[1]] = line[2];
 		loc.set_cgi(cgi_map);
@@ -311,7 +321,7 @@ void Epoll::set_values_location(Location &loc, std::vector<std::string> line)
 }
 
 // VU
-Location Epoll::creat_location(std::vector<std::string> vec, size_t &i)
+Location Config::creat_location(std::vector<std::string> vec, size_t &i)
 {
 	Location	loc;
 
@@ -359,23 +369,23 @@ Location Epoll::creat_location(std::vector<std::string> vec, size_t &i)
 }
 
 
-std::string trimBIS(const std::string &str)
+static std::string trimBIS(const std::string &str)
 {
     size_t start = 0;
     size_t end = str.length();
 
-    // Trim à gauche
+    // Trim a gauche
     while (start < end && (std::isspace(str[start]) || str[start] == ';'))
         start++;
 
-    // Trim à droite
+    // Trim a droite
     while (end > start && (std::isspace(str[end - 1]) || str[end - 1] == ';'))
         end--;
 
     return str.substr(start, end - start);
 }
 
-bool fill_map(std::vector<std::string> line, Server & server)
+static bool fill_map(std::vector<std::string> line, Server & server)
 {
     std::map<std::string, std::string> tmp;
     std::string extension;
@@ -385,20 +395,19 @@ bool fill_map(std::vector<std::string> line, Server & server)
         std::cout << "CGI PARSING : TOO MANY ARGUMENT IN CONFIG FILE" << std::endl;
         return false ;
     }
-    //Ici je dois verifier que apres le cgi il y aun bon format
     //check des extensions
     if ( line[1].size() < 2 || line[1][0] != '.')
-        return false; 
+        return false;
     extension = trimBIS(line[1]);
     path = trimBIS(line[2]);
     tmp = server.get_cgi();
-    tmp[extension] = path; 
+    tmp[extension] = path;
     server.set_cgi(tmp);
     return true ;
 }
 
 // VU
-Server Epoll::creat_serve(std::vector<std::string> vec, size_t &i, Server serve)
+Server Config::creat_serve(std::vector<std::string> vec, size_t &i, Server serve)
 {
 	Location	loc;
 
@@ -447,13 +456,11 @@ Server Epoll::creat_serve(std::vector<std::string> vec, size_t &i, Server serve)
 					serve.set_is_good(false);
 					return (serve);
 				}
-				// Stocker le préfixe URL de ce bloc location (ex: "/uploads")
 				loc.set_path(line[1]);
 				std::vector<Location> locations = serve.get_locations();
 				locations.push_back(loc);
 				serve.set_locations(locations);
 			}
-			// TEST D'AJOUT DE PARSING CGI ICI
 			else if (line[0] == "cgi")
 			{
 				if (fill_map(line, serve) == false)
@@ -463,7 +470,6 @@ Server Epoll::creat_serve(std::vector<std::string> vec, size_t &i, Server serve)
                     return (serve);
                 }
 				i++;
-				// REMPLIR STD::MAP _CGI DANS SERVER
 			}
 			else
 			{
@@ -488,10 +494,10 @@ Server Epoll::creat_serve(std::vector<std::string> vec, size_t &i, Server serve)
 }
 
 // VU
-int Epoll::set_ports(char **av, int ac)
+int Config::parse(char **av, int ac)
 {
 	Server	serve;
-			Server server;
+	Server	server;
 
 	if (ac == 2 && !is_number(av[1]))
 	{

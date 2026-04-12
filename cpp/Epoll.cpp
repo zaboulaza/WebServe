@@ -134,11 +134,8 @@ int Epoll::accept_new_client(Server &server) {
 
     int client_fd = accept(server.get_socketfd(),
                            (struct sockaddr *)&client_addr, &addr_size);
-    if (client_fd == -1) {
-        if (errno != EAGAIN && errno != EWOULDBLOCK)
-            std::cerr << "accept: " << strerror(errno) << std::endl;
+    if (client_fd == -1)
         return 0;
-    }
     set_non_blocking(client_fd);
     server.add_client(client_fd);
 

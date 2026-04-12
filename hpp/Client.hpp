@@ -110,4 +110,9 @@ class Client {
         // Positionne _cgi_pipe_out, _cgi_pid, _cgi_start_time.
         // Retourne le fd pipe_out (>= 0) ou -1 en cas d'erreur.
         int start_cgi(Server &server, const std::string &interpreter);
+
+        // Si la requete pointe vers un CGI : verifie que le script existe,
+        // demarre start_cgi(), et retourne le code pour handle_event (-1/2).
+        // Si ce n'est PAS un CGI : retourne -2 (le caller continue normalement).
+        int try_cgi(Server &server);
 };

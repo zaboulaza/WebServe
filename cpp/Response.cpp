@@ -19,7 +19,6 @@
 #include <sys/stat.h>
 #include <ctime>
 
-// ─── Copie / assignation ─────────────────────────────────────────────────────
 
 Response::Response(const Response &r) {
     *this = r;
@@ -31,14 +30,10 @@ Response &Response::operator=(const Response &r) {
     return *this;
 }
 
-// Ajoute un en-tête custom (utilisé pour les bonus, ex: Set-Cookie).
 void Response::add_header(const std::string &key, const std::string &value) {
     _extra_headers[key] = value;
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-// Détermine le Content-Type selon l'extension du fichier.
 std::string Response::get_content_type(const std::string &path) {
     size_t dot = path.find_last_of('.');
     if (dot == std::string::npos)
@@ -58,18 +53,16 @@ std::string Response::get_content_type(const std::string &path) {
     return "application/octet-stream";
 }
 
-// Construit la partie en-têtes d'une réponse HTTP (sans le corps).
-// Injecte aussi les _extra_headers (bonus: cookies, etc.).
+// construit la partie headers d'une reponse HTTP (sans le body)
 std::string Response::build_headers(const std::string &status,
                                      const std::string &content_type,
                                      size_t content_length) {
     std::ostringstream oss;
     oss << "HTTP/1.1 " << status << "\r\n";
-    oss << "Content-Type: "   << content_type   << "\r\n";
-    oss << "Content-Length: " << content_length  << "\r\n";
+    oss << "Content-Type: " << content_type << "\r\n";
+    oss << "Content-Length: " << content_length << "\r\n";
     oss << "Connection: close\r\n";
 
-    // En-têtes supplémentaires (bonus: Set-Cookie, etc.)
     for (std::map<std::string, std::string>::const_iterator it = _extra_headers.begin();
          it != _extra_headers.end(); ++it) {
         oss << it->first << ": " << it->second << "\r\n";
@@ -78,7 +71,6 @@ std::string Response::build_headers(const std::string &status,
     return oss.str();
 }
 
-// ─── Réponse d'erreur ────────────────────────────────────────────────────────
 
 std::string Response::build_error_response(int code, Server &server) {
     // Vérifier si une page d'erreur personnalisée est configurée
@@ -122,7 +114,6 @@ std::string Response::build_error_response(int code, Server &server) {
     return build_headers(msg, "text/html", body.size()) + body;
 }
 
-// ─── Redirect ────────────────────────────────────────────────────────────────
 
 // Envoie un 301 Moved Permanently (redirect permanent).
 // Si la destination commence par 'http' → redirect absolu, sinon relatif.
@@ -145,7 +136,6 @@ std::string Response::build_redirect_response(const std::string &destination) {
     return oss.str();
 }
 
-// ─── Auto-index ──────────────────────────────────────────────────────────────
 
 // Génère une page HTML listant le contenu d'un répertoire (comme nginx autoindex).
 std::string Response::generate_autoindex(const std::string &fs_path,
@@ -190,15 +180,12 @@ std::string Response::generate_autoindex(const std::string &fs_path,
     return html.str();
 }
 
-// ─── CGI – chercher l'interpréteur ───────────────────────────────────────────
 
-// Méthode statique publique : cherche l'interpréteur CGI pour l'extension du
-// fichier demandé. Cherche d'abord dans la location, puis dans le serveur.
-// Appelée par Client.cpp pour décider si une requête doit passer par CGI.
+// cherche l'interpreteur CGI pour l'extension du fichier demande.
+// priorite a la location, puis fallback sur la config du serveur.
 std::string Response::get_cgi_interpreter(const Request &request,
                                            const Location *loc,
                                            const Server &server) {
-    // Ne garder que le chemin, sans la query string
     std::string path = request.get_path();
     size_t qpos = path.find('?');
     if (qpos != std::string::npos)
@@ -227,13 +214,10 @@ std::string Response::get_cgi_interpreter(const Request &request,
     return "";
 }
 
-// ─── CGI – encapsuler la sortie dans une réponse HTTP ────────────────────────
 
-// Reçoit la sortie brute collectée depuis le pipe CGI (via epoll dans Epoll.cpp)
-// et la transforme en réponse HTTP/1.1 complète.
+// transforme la sortie brute du CGI en reponse HTTP/1.1 complete.
+// le CGI peut avoir genere ses propres headers (Content-Type, Set-Cookie...)
 std::string Response::finish_cgi_response(const std::string &output, Server &server) {
-    // Le CGI peut avoir généré ses propres en-têtes (Content-Type, etc.)
-    // On cherche la séquence de fin d'en-têtes (\r\n\r\n ou \n\n).
     size_t header_end = output.find("\r\n\r\n");
     size_t sep_len = 4;
     if (header_end == std::string::npos) {
@@ -264,7 +248,6 @@ std::string Response::finish_cgi_response(const std::string &output, Server &ser
     return build_headers("200 OK", "text/html", output.size()) + output;
 }
 
-// ─── GET ─────────────────────────────────────────────────────────────────────
 
 std::string Response::build_GET_response(const std::string &root,
                                           const std::string &index,
@@ -354,7 +337,6 @@ std::string Response::build_GET_response(const std::string &root,
     return build_headers("200 OK", get_content_type(fs_path), body.size()) + body;
 }
 
-// ─── POST ────────────────────────────────────────────────────────────────────
 
 std::string Response::build_POST_response(const std::string &upload_folder,
                                            Server &server,
@@ -382,7 +364,6 @@ std::string Response::build_POST_response(const std::string &upload_folder,
     return build_headers("201 Created", "text/html", body.size()) + body;
 }
 
-// ─── DELETE ──────────────────────────────────────────────────────────────────
 
 std::string Response::build_DELETE_response(const std::string &root,
                                               Server &server,
@@ -396,17 +377,14 @@ std::string Response::build_DELETE_response(const std::string &root,
     return build_error_response(404, server);
 }
 
-// ─── Point d'entrée principal ────────────────────────────────────────────────
 
-// Construit la réponse HTTP complète pour les requêtes NON-CGI.
-// Le CGI est intercepté en amont par Client.cpp (qui appelle start_cgi() et
-// retourne 2 pour que Epoll enregistre le pipe de sortie CGI).
-// Logique : find_location → redirect ? → méthode HTTP standard
+// logique : find_location -> redirect ? -> methode HTTP standard.
+// le CGI est deja intercepte en amont par Client.cpp
 std::string Response::build_response(Server &server, Request &request) {
-    // 1. Trouver le bloc location correspondant au path (longest prefix match)
+    // longest prefix match sur le path
     Location *loc = server.find_location(request.get_path());
 
-    // 2. Config effective : la location surcharge le serveur si elle a une valeur
+    // la location surcharge le serveur si elle a une valeur
     std::string root = server.get_root();
     if (loc && !loc->get_root().empty())
         root = loc->get_root();
@@ -423,7 +401,6 @@ std::string Response::build_response(Server &server, Request &request) {
     if (loc)
         auto_index = loc->get_auto_index();
 
-    // 3. Redirect ?
     std::string redirect = server.get_redirect();
     if (loc && !loc->get_redirect().empty())
         redirect = loc->get_redirect();
@@ -431,7 +408,6 @@ std::string Response::build_response(Server &server, Request &request) {
     if (!redirect.empty())
         return build_redirect_response(redirect);
 
-    // 4. Méthode HTTP standard (CGI déjà intercepté par Client avant cet appel)
     if (request.get_method() == "GET")
         return build_GET_response(root, index, auto_index, server, request);
     if (request.get_method() == "POST")
@@ -439,6 +415,5 @@ std::string Response::build_response(Server &server, Request &request) {
     if (request.get_method() == "DELETE")
         return build_DELETE_response(root, server, request);
 
-    // Méthode reçue mais non gérée (ne devrait pas arriver après validate_header)
     return build_error_response(405, server);
 }
