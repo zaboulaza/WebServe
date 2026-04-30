@@ -130,7 +130,7 @@ The development notes in `cour.md` (written in French) describe the body-parsing
 - **epoll** (`man 7 epoll`) — Linux-specific, efficient I/O event notification
 - **Non-blocking sockets** — `fcntl(fd, F_SETFL, O_NONBLOCK)` — `recv()`/`send()` return immediately instead of blocking
 - **`getaddrinfo()`** — resolves host/port to a usable socket address (handles IPv4 + IPv6)
-- **`SO_REUSEADDR`** — allows rebinding to a port shortly after the server restart
+- **`SO_REUSEADDR`** — allows rebinding to a port shortly after the server restarts
 
 ## C++98 Constraint
 
